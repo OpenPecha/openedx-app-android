@@ -20,6 +20,9 @@ Modern vision of the mobile application for the Open edX platform from Raccoon G
 
 6. Click the **Run** button.
 
+## Development Setup
+Check [Development Setup Documentation](Documentation/DevelopmentSetupDocumentation.md) for steps of setting up development environment.
+
 ## Translations
 
 ### Getting Translations for the App

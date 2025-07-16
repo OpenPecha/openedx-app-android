@@ -266,6 +266,7 @@ fun LoginTextField(
             unfocusedTextColor = MaterialTheme.appColors.textFieldText,
             focusedContainerColor = MaterialTheme.appColors.textFieldBackground,
             unfocusedContainerColor = MaterialTheme.appColors.textFieldBackground,
+            focusedBorderColor = MaterialTheme.appColors.textFieldBorder,
             unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
             cursorColor = MaterialTheme.appColors.textFieldText,
         ),
@@ -544,7 +545,7 @@ fun ExpandableText(
             modifier = Modifier,
             text = text,
             style = MaterialTheme.appTypography.bodyLarge,
-            color = MaterialTheme.appColors.primary
+            color = MaterialTheme.appColors.infoVariant
         )
         Icon(
             modifier = Modifier.rotate(arrowRotationDegree),

@@ -2,7 +2,7 @@ package org.openedx.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val light_primary = Color(0xFF3C68FF)
+val light_primary = Color(0xFFFC8044)   // primary color
 val light_primary_variant = Color(0x9ADEFAFF)
 val light_secondary = Color(0xFF94D3DD)
 val light_secondary_variant = Color(0xFF94D3DD)
@@ -16,7 +16,7 @@ val light_onSurface = Color.Black
 val light_onError = Color.White
 val light_onWarning = Color.White
 val light_onInfo = Color.White
-val light_info_variant = Color(0xFF3C68FF)
+val light_info_variant = Color(0xFF808080) // color for text links
 val light_text_primary = Color(0xFF212121)
 val light_text_primary_variant = Color(0xFF3D4964)
 val light_text_primary_light = light_text_primary
@@ -26,12 +26,12 @@ val light_text_accent = Color(0xFF3C68FF)
 val light_text_warning = Color(0xFF19212F)
 val light_text_field_background = Color(0xFFF7F7F8)
 val light_text_field_background_variant = Color.White
-val light_text_field_border = Color(0xFF97A5BB)
+val light_text_field_border = Color(0xFF97A5BB) // highlighted input field border color
 val light_text_field_text = Color(0xFF3D4964)
 val light_text_field_hint = Color(0xFF97A5BB)
 val light_text_hyper_link = Color(0xFF3C68FF)
 
-val light_primary_button_background = Color(0xFF3C68FF)
+val light_primary_button_background = Color(0xFFFC8044) // primary button color
 val light_primary_button_border = Color(0xFF97A5BB)
 val light_primary_button_text = Color.White
 val light_primary_button_bordered_text = Color(0xFF3C68FF)

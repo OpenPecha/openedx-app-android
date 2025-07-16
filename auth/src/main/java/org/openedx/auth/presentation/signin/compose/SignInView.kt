@@ -277,7 +277,7 @@ private fun AuthForm(
                                 onEvent(AuthEvent.RegisterClick)
                             },
                         text = stringResource(id = coreR.string.core_register),
-                        color = MaterialTheme.appColors.primary,
+                        color = MaterialTheme.appColors.infoVariant,
                         style = MaterialTheme.appTypography.labelLarge
                     )
                 }
@@ -367,6 +367,7 @@ private fun PasswordTextField(
         colors = TextFieldDefaults.outlinedTextFieldColors(
             textColor = MaterialTheme.appColors.textFieldText,
             backgroundColor = MaterialTheme.appColors.textFieldBackground,
+            focusedBorderColor = MaterialTheme.appColors.textFieldBorder,
             unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
             cursorColor = MaterialTheme.appColors.textFieldText,
         ),

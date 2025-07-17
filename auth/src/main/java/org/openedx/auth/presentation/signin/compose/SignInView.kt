@@ -4,8 +4,10 @@ import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -16,12 +18,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -48,6 +52,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -273,22 +278,10 @@ private fun AuthForm(
             )
 
             Row(
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 20.dp, bottom = 36.dp)
             ) {
-                if (state.isLogistrationEnabled.not() && state.isRegistrationEnabled) {
-                    Text(
-                        modifier = Modifier
-                            .testTag("txt_register")
-                            .noRippleClickable {
-                                onEvent(AuthEvent.RegisterClick)
-                            },
-                        text = stringResource(id = coreR.string.core_register),
-                        color = MaterialTheme.appColors.infoVariant,
-                        style = MaterialTheme.appTypography.labelLarge
-                    )
-                }
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     modifier = Modifier
@@ -322,6 +315,10 @@ private fun AuthForm(
                 )
             }
             if (state.isSocialAuthEnabled) {
+                OrDivider(
+                    text = stringResource(id = R.string.auth_normal_or_sso),
+                    padding = PaddingValues(top = 24.dp, bottom = 24.dp)
+                )
                 SocialAuthView(
                     modifier = buttonWidth,
                     isGoogleAuthEnabled = state.isGoogleAuthEnabled,
@@ -402,6 +399,34 @@ private fun AuthForm(
                     onClick = { onEvent(AuthEvent.SsoSignIn(jwtToken = "")) },
                 )
             }
+        }
+    }
+    if (state.isLogistrationEnabled.not() &&
+        state.isRegistrationEnabled
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 20.dp, bottom = 36.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.auth_dont_have_account),
+                style = MaterialTheme.appTypography.labelLarge,
+                color = MaterialTheme.appColors.textPrimary
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(id = coreR.string.core_register),
+                modifier = Modifier
+                    .testTag("txt_register")
+                    .noRippleClickable {
+                        onEvent(AuthEvent.RegisterClick)
+                    },
+                style = MaterialTheme.appTypography.labelLarge,
+                color = MaterialTheme.appColors.infoVariant
+            )
         }
     }
 }
@@ -531,6 +556,41 @@ private fun SignInScreenTabletPreview() {
                 ),
             uiMessage = null,
             onEvent = {},
+        )
+    }
+}
+
+@Composable
+internal fun OrDivider(
+    modifier: Modifier = Modifier,
+    text: String,
+    lineColor: Color = MaterialTheme.appColors.textPrimary,
+    textStyle: TextStyle = MaterialTheme.appTypography.labelLarge,
+    textColor: Color = MaterialTheme.appColors.textPrimary,
+    lineThickness: Dp = 0.8.dp,
+    padding: PaddingValues = PaddingValues(top = 24.dp)
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(padding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = lineColor,
+            thickness = lineThickness
+        )
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp),
+            style = textStyle,
+            color = textColor
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = lineColor,
+            thickness = lineThickness
         )
     }
 }

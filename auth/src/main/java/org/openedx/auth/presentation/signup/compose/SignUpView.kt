@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openedx.auth.R
 import org.openedx.auth.data.model.AuthType
+import org.openedx.auth.presentation.signin.compose.OrDivider
 import org.openedx.auth.presentation.signup.SignUpUIState
 import org.openedx.auth.presentation.ui.ExpandableText
 import org.openedx.auth.presentation.ui.OptionalFields
@@ -439,6 +441,10 @@ internal fun SignUpView(
                                     )
                                 }
                                 if (uiState.isSocialAuthEnabled && uiState.socialAuth == null) {
+                                    OrDivider(
+                                        text = stringResource(id = R.string.auth_normal_or_sso),
+                                        padding = PaddingValues(top = 0.dp)
+                                    )
                                     SocialAuthView(
                                         modifier = buttonWidth,
                                         isGoogleAuthEnabled = uiState.isGoogleAuthEnabled,

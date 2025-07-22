@@ -28,7 +28,7 @@
     <string name="auth_error_empty_password">Please enter your password and try again.</string>
     <string name="auth_create_new_account">Create an account to start learning today!</string>
     <string name="auth_compete_registration" translatable="false">Complete your registration</string>
-    <string name="auth_google" tools:ignore="ExtraTranslation">Sign in with Google</string>
+    <string name="auth_google" tools:ignore="ExtraTranslation">Continue with Google</string>
     <string name="auth_facebook" tools:ignore="ExtraTranslation">Sign in with Facebook</string>
     <string name="auth_microsoft" tools:ignore="ExtraTranslation">Sign in with Microsoft</string>
     <string name="auth_continue_google" tools:ignore="ExtraTranslation">Continue with Google</string>
@@ -44,4 +44,6 @@
     <string name="auth_cdata_template" translatable="false"><![CDATA[<a href="%1$s">%2$s</a>]]></string>
     <string name="auth_accessibility_show_password">Show password</string>
     <string name="auth_accessibility_hide_password">Hide password</string>
+    <string name="auth_normal_or_sso">or</string>
+    <string name="auth_dont_have_account">Don\'t have an account?</string>
 </resources>

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,13 +27,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -74,7 +82,9 @@ import org.openedx.core.ui.theme.appTypography
 import org.openedx.discovery.DiscoveryMocks
 import org.openedx.discovery.R
 import org.openedx.discovery.domain.model.Course
+import org.openedx.discovery.domain.model.Organization
 import org.openedx.discovery.presentation.NativeDiscoveryFragment.Companion.LOAD_MORE_THRESHOLD
+import org.openedx.discovery.presentation.component.OrganizationFilterBottomSheet
 import org.openedx.discovery.presentation.ui.DiscoveryCourseItem
 import org.openedx.foundation.presentation.UIMessage
 import org.openedx.foundation.presentation.WindowSize
@@ -206,9 +216,32 @@ internal fun DiscoveryScreen(
     }
     val pullToRefreshState = rememberPullToRefreshState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showOrganizationFilter by rememberSaveable {
+        mutableStateOf(false)
+    }
+    val organizations = remember {
+        listOf(
+            Organization("org1", "Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png"),
+            Organization("org2", "Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png"),
+        )
+    }
 
     var isInternetConnectionShown by rememberSaveable {
         mutableStateOf(false)
+    }
+
+    if (showOrganizationFilter) {
+        ModalBottomSheet(
+            onDismissRequest = { showOrganizationFilter = false },
+            sheetState = bottomSheetState
+        ) {
+            OrganizationFilterBottomSheet(
+                orgList = organizations,
+                isLoading = false,
+                onClose = { showOrganizationFilter = false }
+            )
+        }
     }
 
     Scaffold(
@@ -309,15 +342,37 @@ internal fun DiscoveryScreen(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                StaticSearchBar(
+                Row(
                     modifier = Modifier
                         .height(48.dp)
                         .padding(horizontal = 24.dp)
                         .then(searchTabWidth),
-                    onClick = {
-                        onSearchClick()
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    StaticSearchBar(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        onClick = {
+                            onSearchClick()
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = {
+                            showOrganizationFilter = true
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_filter),
+                            contentDescription = stringResource(id = R.string.filter_courses),
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.appColors.textPrimary
+                        )
                     }
-                )
+                }
                 Spacer(modifier = Modifier.height(12.dp))
             }
             Surface(

@@ -84,6 +84,21 @@ import org.openedx.foundation.presentation.WindowSize
 import org.openedx.foundation.presentation.WindowType
 import org.openedx.foundation.presentation.rememberWindowSize
 import org.openedx.foundation.presentation.windowSizeValue
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.presentation.component.OrganizationFilterBottomSheet
+
 
 class NativeDiscoveryFragment : Fragment() {
 
@@ -225,6 +240,17 @@ internal fun DiscoveryScreen(
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        skipHalfExpanded = true
+    )
+
+    val orgList = listOf(
+        Organization("org1", "Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png" ),
+        Organization("org2", "Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png" ),
+    )
+
     val scaffoldState = rememberScaffoldState()
     val scrollState = rememberLazyListState()
     val firstVisibleIndex = remember {
@@ -237,241 +263,287 @@ internal fun DiscoveryScreen(
         mutableStateOf(false)
     }
 
-    Scaffold(
-        scaffoldState = scaffoldState,
-        modifier = Modifier
-            .fillMaxSize()
-            .semantics {
-                testTagsAsResourceId = true
-            },
-        backgroundColor = MaterialTheme.appColors.background,
-        bottomBar = {
-            if (!isUserLoggedIn) {
-                Box(
-                    modifier = Modifier
-                        .padding(
-                            horizontal = 16.dp,
-                            vertical = 32.dp,
-                        )
-                        .navigationBarsPadding()
-                ) {
-                    AuthButtonsPanel(
-                        onRegisterClick = onRegisterClick,
-                        onSignInClick = onSignInClick,
-                        showRegisterButton = isRegistrationEnabled
-                    )
+    ModalBottomSheetLayout(
+        sheetState = sheetState,
+        sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        sheetContent = {
+            OrganizationFilterBottomSheet(
+                orgList = orgList,
+                isLoading = false,
+                onClose = {
+                    coroutineScope.launch { sheetState.hide() }
+                    // TODO: trigger filtering
                 }
-            }
+            )
         }
     ) {
-        val searchTabWidth by remember(key1 = windowSize) {
-            mutableStateOf(
-                windowSize.windowSizeValue(
-                    expanded = Modifier.widthIn(Dp.Unspecified, 420.dp),
-                    compact = Modifier.fillMaxWidth()
-                )
-            )
-        }
-
-        val contentWidth by remember(key1 = windowSize) {
-            mutableStateOf(
-                windowSize.windowSizeValue(
-                    expanded = Modifier.widthIn(Dp.Unspecified, 560.dp),
-                    compact = Modifier.fillMaxWidth()
-                )
-            )
-        }
-
-        val contentPaddings by remember(key1 = windowSize) {
-            mutableStateOf(
-                windowSize.windowSizeValue(
-                    expanded = PaddingValues(
-                        top = 32.dp,
-                        bottom = 40.dp
-                    ),
-                    compact = PaddingValues(horizontal = 24.dp, vertical = 20.dp)
-                )
-            )
-        }
-
-        HandleUIMessage(uiMessage = uiMessage, scaffoldState = scaffoldState)
-
-        if (canShowBackButton) {
-            Box(
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                BackBtn(
-                    modifier = Modifier.padding(end = 16.dp),
-                    tint = MaterialTheme.appColors.primary
-                ) {
-                    onBackClick()
+        Scaffold(
+            topBar = {
+            },
+            scaffoldState = scaffoldState,
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics {
+                    testTagsAsResourceId = true
+                },
+            backgroundColor = MaterialTheme.appColors.background,
+            bottomBar = {
+                if (!isUserLoggedIn) {
+                    Box(
+                        modifier = Modifier
+                            .padding(
+                                horizontal = 16.dp,
+                                vertical = 32.dp,
+                            )
+                            .navigationBarsPadding()
+                    ) {
+                        AuthButtonsPanel(
+                            onRegisterClick = onRegisterClick,
+                            onSignInClick = onSignInClick,
+                            showRegisterButton = isRegistrationEnabled
+                        )
+                    }
                 }
             }
-        }
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(it)
-                .statusBarsInset()
-                .displayCutoutForLandscape(),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Toolbar(
-                    label = stringResource(id = R.string.discovery_Discovery),
-                    canShowBackBtn = canShowBackButton,
-                    canShowSettingsIcon = !canShowBackButton,
-                    onBackClick = onBackClick,
-                    onSettingsClick = onSettingsClick
-                )
 
-                Spacer(modifier = Modifier.height(16.dp))
-                StaticSearchBar(
-                    modifier = Modifier
-                        .height(48.dp)
-                        .padding(horizontal = 24.dp)
-                        .then(searchTabWidth),
-                    onClick = {
-                        onSearchClick()
-                    }
+            val searchTabWidth by remember(key1 = windowSize) {
+                mutableStateOf(
+                    windowSize.windowSizeValue(
+                        expanded = Modifier.widthIn(Dp.Unspecified, 420.dp),
+                        compact = Modifier.fillMaxWidth()
+                    )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
-            Surface(
-                color = MaterialTheme.appColors.background
-            ) {
+
+            val contentWidth by remember(key1 = windowSize) {
+                mutableStateOf(
+                    windowSize.windowSizeValue(
+                        expanded = Modifier.widthIn(Dp.Unspecified, 560.dp),
+                        compact = Modifier.fillMaxWidth()
+                    )
+                )
+            }
+
+            val contentPaddings by remember(key1 = windowSize) {
+                mutableStateOf(
+                    windowSize.windowSizeValue(
+                        expanded = PaddingValues(
+                            top = 32.dp,
+                            bottom = 40.dp
+                        ),
+                        compact = PaddingValues(horizontal = 24.dp, vertical = 20.dp)
+                    )
+                )
+            }
+
+            HandleUIMessage(uiMessage = uiMessage, scaffoldState = scaffoldState)
+
+            if (canShowBackButton) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .pullRefresh(pullRefreshState)
+                        .statusBarsPadding()
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    when (state) {
-                        is DiscoveryUIState.Loading -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = MaterialTheme.appColors.primary)
-                            }
-                        }
-
-                        is DiscoveryUIState.Courses -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                LazyColumn(
-                                    Modifier
-                                        .fillMaxHeight()
-                                        .then(contentWidth),
-                                    contentPadding = contentPaddings,
-                                    state = scrollState
-                                ) {
-                                    item {
-                                        Column {
-                                            Text(
-                                                modifier = Modifier.testTag("txt_discovery_new"),
-                                                text = stringResource(id = R.string.discovery_discovery_new),
-                                                color = MaterialTheme.appColors.textPrimary,
-                                                style = MaterialTheme.appTypography.displaySmall
-                                            )
-                                            Text(
-                                                modifier = Modifier
-                                                    .testTag("txt_discovery_lets_find")
-                                                    .padding(top = 4.dp),
-                                                text = stringResource(id = R.string.discovery_lets_find),
-                                                color = MaterialTheme.appColors.textPrimary,
-                                                style = MaterialTheme.appTypography.titleSmall
-                                            )
-                                            Spacer(modifier = Modifier.height(14.dp))
-                                        }
-                                    }
-                                    items(state.courses) { course ->
-                                        DiscoveryCourseItem(
-                                            apiHostUrl = apiHostUrl,
-                                            course = course,
-                                            windowSize = windowSize,
-                                            onClick = {
-                                                onItemClick(course)
-                                            }
-                                        )
-                                        Divider()
-                                    }
-                                    item {
-                                        if (canLoadMore) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CircularProgressIndicator(color = MaterialTheme.appColors.primary)
-                                            }
-                                        }
-                                    }
-                                }
-                                if (scrollState.shouldLoadMore(firstVisibleIndex, LOAD_MORE_THRESHOLD)) {
-                                    paginationCallback()
-                                }
-                            }
-                        }
+                    BackBtn(
+                        modifier = Modifier.padding(end = 16.dp),
+                        tint = MaterialTheme.appColors.primary
+                    ) {
+                        onBackClick()
                     }
-                    PullRefreshIndicator(
-                        refreshing,
-                        pullRefreshState,
-                        Modifier.align(Alignment.TopCenter)
+                }
+            }
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(it)
+                    .statusBarsInset()
+                    .displayCutoutForLandscape(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Toolbar(
+                        label = stringResource(id = R.string.discovery_Discovery),
+                        canShowBackBtn = canShowBackButton,
+                        canShowSettingsIcon = !canShowBackButton,
+                        onBackClick = onBackClick,
+                        onSettingsClick = onSettingsClick
                     )
 
-                    Column(
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // TODO: Check here:
+                    // Making changes here
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .then(searchTabWidth)
+                            .height(48.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StaticSearchBar(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            onClick = {
+                                onSearchClick()
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    sheetState.show()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_filter),
+                                contentDescription = stringResource(id = R.string.filter_courses),
+                                modifier = Modifier.size(30.dp),
+                                tint = MaterialTheme.appColors.textPrimary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                Surface(
+                    color = MaterialTheme.appColors.background
+                ) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
+                            .pullRefresh(pullRefreshState)
                     ) {
-                        when (appUpgradeParameters.appUpgradeEvent) {
-                            is AppUpgradeEvent.UpgradeRecommendedEvent -> {
-                                if (appUpgradeParameters.wasUpdateDialogClosed) {
-                                    AppUpgradeRecommendedBox(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        onClick = appUpgradeParameters.onAppUpgradeRecommendedBoxClick
-                                    )
-                                } else {
-                                    if (!AppUpdateState.wasUpdateDialogDisplayed) {
-                                        AppUpdateState.wasUpdateDialogDisplayed = true
-                                        appUpgradeParameters.appUpgradeRecommendedDialog()
+                        when (state) {
+                            is DiscoveryUIState.Loading -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = MaterialTheme.appColors.primary)
+                                }
+                            }
+
+                            is DiscoveryUIState.Courses -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    LazyColumn(
+                                        Modifier
+                                            .fillMaxHeight()
+                                            .then(contentWidth),
+                                        contentPadding = contentPaddings,
+                                        state = scrollState
+                                    ) {
+                                        item {
+                                            Column {
+                                                Text(
+                                                    modifier = Modifier.testTag("txt_discovery_new"),
+                                                    text = stringResource(id = R.string.discovery_discovery_new),
+                                                    color = MaterialTheme.appColors.textPrimary,
+                                                    style = MaterialTheme.appTypography.displaySmall
+                                                )
+                                                Text(
+                                                    modifier = Modifier
+                                                        .testTag("txt_discovery_lets_find")
+                                                        .padding(top = 4.dp),
+                                                    text = stringResource(id = R.string.discovery_lets_find),
+                                                    color = MaterialTheme.appColors.textPrimary,
+                                                    style = MaterialTheme.appTypography.titleSmall
+                                                )
+                                                Spacer(modifier = Modifier.height(14.dp))
+                                            }
+                                        }
+                                        items(state.courses) { course ->
+                                            DiscoveryCourseItem(
+                                                apiHostUrl = apiHostUrl,
+                                                course = course,
+                                                windowSize = windowSize,
+                                                onClick = {
+                                                    onItemClick(course)
+                                                }
+                                            )
+                                            Divider()
+                                        }
+                                        item {
+                                            if (canLoadMore) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 16.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    CircularProgressIndicator(color = MaterialTheme.appColors.primary)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (scrollState.shouldLoadMore(firstVisibleIndex, LOAD_MORE_THRESHOLD)) {
+                                        paginationCallback()
                                     }
                                 }
                             }
-
-                            is AppUpgradeEvent.UpgradeRequiredEvent -> {
-                                if (!AppUpdateState.wasUpdateDialogDisplayed) {
-                                    AppUpdateState.wasUpdateDialogDisplayed = true
-                                    appUpgradeParameters.onAppUpgradeRequired()
-                                }
-                            }
-
-                            else -> {}
                         }
-                        if (!isInternetConnectionShown && !hasInternetConnection) {
-                            OfflineModeDialog(
-                                Modifier
-                                    .fillMaxWidth(),
-                                onDismissCLick = {
-                                    isInternetConnectionShown = true
-                                },
-                                onReloadClick = {
-                                    isInternetConnectionShown = true
-                                    onReloadClick()
+                        PullRefreshIndicator(
+                            refreshing,
+                            pullRefreshState,
+                            Modifier.align(Alignment.TopCenter)
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                        ) {
+                            when (appUpgradeParameters.appUpgradeEvent) {
+                                is AppUpgradeEvent.UpgradeRecommendedEvent -> {
+                                    if (appUpgradeParameters.wasUpdateDialogClosed) {
+                                        AppUpgradeRecommendedBox(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            onClick = appUpgradeParameters.onAppUpgradeRecommendedBoxClick
+                                        )
+                                    } else {
+                                        if (!AppUpdateState.wasUpdateDialogDisplayed) {
+                                            AppUpdateState.wasUpdateDialogDisplayed = true
+                                            appUpgradeParameters.appUpgradeRecommendedDialog()
+                                        }
+                                    }
                                 }
-                            )
+
+                                is AppUpgradeEvent.UpgradeRequiredEvent -> {
+                                    if (!AppUpdateState.wasUpdateDialogDisplayed) {
+                                        AppUpdateState.wasUpdateDialogDisplayed = true
+                                        appUpgradeParameters.onAppUpgradeRequired()
+                                    }
+                                }
+
+                                else -> {}
+                            }
+                            if (!isInternetConnectionShown && !hasInternetConnection) {
+                                OfflineModeDialog(
+                                    Modifier
+                                        .fillMaxWidth(),
+                                    onDismissCLick = {
+                                        isInternetConnectionShown = true
+                                    },
+                                    onReloadClick = {
+                                        isInternetConnectionShown = true
+                                        onReloadClick()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

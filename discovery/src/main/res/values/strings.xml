@@ -14,6 +14,8 @@
     <string name="discovery_enrolled_successfully">You have been successfully enrolled in this course.</string>
     <string name="discovery_you_are_already_enrolled">You are already enrolled in this course.</string>
     <string name="discovery_programs" tools:ignore="MissingTranslation">Programs</string>
+    <string name="filter_courses">Filter Courses</string>
+    <string name="schools_and_partners">Schools and Partners</string>
 
     <plurals name="discovery_found_courses">
         <item quantity="one">Found %s course on your request</item>

@@ -166,7 +166,7 @@ val screenModule = module {
 
     factory { DiscoveryRepository(get(), get(), get()) }
     factory { DiscoveryInteractor(get()) }
-    viewModel { NativeDiscoveryViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { NativeDiscoveryViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (querySearch: String) ->
         WebViewDiscoveryViewModel(
             querySearch,

@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -34,6 +32,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
+import coil.request.ImageRequest
+
 
 @Composable
 fun OrganizationFilterBottomSheet(
@@ -67,7 +69,7 @@ fun OrganizationFilterBottomSheet(
             style = MaterialTheme.appTypography.titleMedium,
             color = MaterialTheme.appColors.textPrimary,
             modifier = Modifier
-                .fillMaxWidth()
+//                .fillMaxWidth()
                 .padding(bottom = 12.dp),
             textAlign = TextAlign.Center
         )
@@ -89,14 +91,13 @@ fun OrganizationFilterBottomSheet(
 }
 
 
-
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, showBackground = true)
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 fun OrganizationFilterBottomSheetPreview() {
     val sampleOrgs = listOf(
-        Organization("org1", "Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png" ),
-        Organization("org2", "Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png" ),
+        Organization("org1", "Org 1", "https://example.com/mock_logo.png" ),
+        Organization("org2", "Org 2", "https://example.com/mock_logo2.png" ),
     )
 
     OpenEdXTheme {
@@ -123,7 +124,10 @@ fun OrganizationCard(
             .padding(8.dp)
     ) {
         AsyncImage(
-            model = organization.logo,
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(organization.logo)  // logo URL from API
+                .crossfade(true)
+                .build(),
             contentDescription = organization.name,
             modifier = Modifier
                 .height(50.dp),
@@ -133,6 +137,9 @@ fun OrganizationCard(
             text = organization.name,
             style = MaterialTheme.appTypography.titleSmall,
             color = MaterialTheme.appColors.textPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 4.dp)
         )
     }

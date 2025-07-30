@@ -1,5 +1,6 @@
 package org.openedx.discovery.presentation
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -12,8 +13,10 @@ import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.system.connection.NetworkConnection
 import org.openedx.core.system.notifier.app.AppNotifier
 import org.openedx.core.system.notifier.app.AppUpgradeEvent
+import org.openedx.discovery.data.repository.DiscoveryRepository
 import org.openedx.discovery.domain.interactor.DiscoveryInteractor
 import org.openedx.discovery.domain.model.Course
+import org.openedx.discovery.domain.model.Organization
 import org.openedx.foundation.extension.isInternetError
 import org.openedx.foundation.presentation.BaseViewModel
 import org.openedx.foundation.presentation.SingleEventLiveData
@@ -28,12 +31,16 @@ class NativeDiscoveryViewModel(
     private val analytics: DiscoveryAnalytics,
     private val appNotifier: AppNotifier,
     private val corePreferences: CorePreferences,
+    private val repository: DiscoveryRepository
 ) : BaseViewModel() {
 
     val apiHostUrl get() = config.getApiHostURL()
     val isUserLoggedIn get() = corePreferences.user != null
     val canShowBackButton get() = config.isPreLoginExperienceEnabled() && !isUserLoggedIn
     val isRegistrationEnabled: Boolean get() = config.isRegistrationEnabled()
+
+    private val _organizations = MutableLiveData<List<Organization>>()
+    val organizations: LiveData<List<Organization>> = _organizations
 
     private val _uiState = MutableLiveData<DiscoveryUIState>(DiscoveryUIState.Loading)
     val uiState: LiveData<DiscoveryUIState>
@@ -196,5 +203,17 @@ class NativeDiscoveryViewModel(
                 put(DiscoveryAnalyticsKey.CATEGORY.key, DiscoveryAnalyticsKey.DISCOVERY.key)
             }
         )
+    }
+
+    fun fetchOrganizations() {
+        viewModelScope.launch {
+            try {
+                val orgs = repository.getOrganizations()
+                _organizations.value = orgs
+            } catch (e: Exception) {
+                Log.e("DiscoveryViewModel", "Failed to load orgs", e)
+                // TODO: Check this
+            }
+        }
     }
 }

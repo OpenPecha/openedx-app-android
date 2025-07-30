@@ -1,9 +1,12 @@
 package org.openedx.discovery.domain.model
 
-import androidx.annotation.DrawableRes
+import com.google.gson.annotations.SerializedName
 
 data class Organization(
-    val id: String,
+    @SerializedName("partner_name")
     val name: String,
+    @SerializedName("logo")
     val logo: String,
+    @SerializedName("organization")
+    val organization: String
 )

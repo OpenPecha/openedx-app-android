@@ -95,6 +95,7 @@ import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.openedx.discovery.domain.model.Organization
 import org.openedx.discovery.presentation.component.OrganizationFilterBottomSheet
@@ -188,7 +189,9 @@ class NativeDiscoveryFragment : Fragment() {
                     },
                     onSettingsClick = {
                         router.navigateToSettings(requireActivity().supportFragmentManager)
-                    }
+                    },
+                    organizations = viewModel.organizations.observeAsState(emptyList()).value,
+                    fetchOrganizations = { viewModel.fetchOrganizations() },
                 )
                 LaunchedEffect(uiState) {
                     if (querySearch.isNotEmpty()) {
@@ -239,17 +242,20 @@ internal fun DiscoveryScreen(
     onSignInClick: () -> Unit,
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    organizations: List<Organization>,
+    fetchOrganizations: () -> Unit, // TODO: Check this
 ) {
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
         skipHalfExpanded = true
     )
+    val viewModel: NativeDiscoveryViewModel = viewModel()
 
-    val orgList = listOf(
-        Organization("org1", "Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png" ),
-        Organization("org2", "Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png" ),
-    )
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchOrganizations()
+    }
 
     val scaffoldState = rememberScaffoldState()
     val scrollState = rememberLazyListState()
@@ -268,7 +274,7 @@ internal fun DiscoveryScreen(
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         sheetContent = {
             OrganizationFilterBottomSheet(
-                orgList = orgList,
+                orgList = organizations,
                 isLoading = false,
                 onClose = {
                     coroutineScope.launch { sheetState.hide() }
@@ -603,7 +609,9 @@ private fun DiscoveryScreenPreview() {
             onRegisterClick = {},
             onBackClick = {},
             onSettingsClick = {},
-            canShowBackButton = false
+            canShowBackButton = false,
+            organizations = listOf(),
+            fetchOrganizations = {},
         )
     }
 }
@@ -645,7 +653,9 @@ private fun DiscoveryScreenTabletPreview() {
             onRegisterClick = {},
             onBackClick = {},
             onSettingsClick = {},
-            canShowBackButton = false
+            canShowBackButton = false,
+            organizations = listOf(),
+            fetchOrganizations = {},
         )
     }
 }

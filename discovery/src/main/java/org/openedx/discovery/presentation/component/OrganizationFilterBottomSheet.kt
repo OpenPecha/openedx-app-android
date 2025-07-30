@@ -23,11 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
 import org.openedx.core.ui.theme.appTypography
@@ -95,8 +98,8 @@ fun OrganizationFilterBottomSheet(
 @Composable
 fun OrganizationFilterBottomSheetPreview() {
     val sampleOrgs = listOf(
-        Organization("org1", "Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png"),
-        Organization("org2", "Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png"),
+        Organization("Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png", "org1"),
+        Organization("Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png", "org2"),
     )
 
     OpenEdXTheme {
@@ -123,7 +126,10 @@ fun OrganizationCard(
             .padding(8.dp)
     ) {
         AsyncImage(
-            model = organization.logo,
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(organization.logo)
+                .crossfade(true)
+                .build(),
             contentDescription = organization.name,
             modifier = Modifier
                 .height(50.dp),
@@ -133,6 +139,9 @@ fun OrganizationCard(
             text = organization.name,
             style = MaterialTheme.appTypography.titleSmall,
             color = MaterialTheme.appColors.textPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 4.dp)
         )
     }

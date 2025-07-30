@@ -7,8 +7,10 @@ import kotlinx.coroutines.launch
 import org.openedx.core.config.Config
 import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.system.connection.NetworkConnection
+import org.openedx.discovery.data.repository.DiscoveryRepository
 import org.openedx.discovery.domain.interactor.DiscoveryInteractor
 import org.openedx.discovery.domain.model.Course
+import org.openedx.discovery.domain.model.Organization
 import org.openedx.foundation.presentation.BaseViewModel
 import org.openedx.foundation.system.ResourceManager
 
@@ -19,12 +21,17 @@ class NativeDiscoveryViewModel(
     private val resourceManager: ResourceManager,
     private val analytics: DiscoveryAnalytics,
     private val corePreferences: CorePreferences,
+    private val repository: DiscoveryRepository,
 ) : BaseViewModel(resourceManager) {
 
     val apiHostUrl get() = config.getApiHostURL()
     val isUserLoggedIn get() = corePreferences.user != null
     val canShowBackButton get() = config.isPreLoginExperienceEnabled() && !isUserLoggedIn
     val isRegistrationEnabled: Boolean get() = config.isRegistrationEnabled()
+
+    private val _organizations = MutableLiveData<List<Organization>>(emptyList())
+    val organizations: LiveData<List<Organization>>
+        get() = _organizations
 
     private val _uiState = MutableLiveData<DiscoveryUIState>(DiscoveryUIState.Loading)
     val uiState: LiveData<DiscoveryUIState>
@@ -47,6 +54,7 @@ class NativeDiscoveryViewModel(
 
     init {
         getCoursesList()
+        fetchOrganizations()
     }
 
     private fun loadCoursesInternal(
@@ -152,5 +160,17 @@ class NativeDiscoveryViewModel(
                 put(DiscoveryAnalyticsKey.CATEGORY.key, DiscoveryAnalyticsKey.DISCOVERY.key)
             }
         )
+    }
+
+    fun fetchOrganizations() {
+        viewModelScope.launch {
+            try {
+                _organizations.value = repository.getOrganizations()
+            } catch (e: Exception) {
+                handleErrorUiMessage(
+                    throwable = e,
+                )
+            }
+        }
     }
 }

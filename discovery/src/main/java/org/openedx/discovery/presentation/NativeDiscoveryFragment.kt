@@ -111,6 +111,7 @@ class NativeDiscoveryFragment : Fragment() {
                 val uiMessage by viewModel.uiMessage.collectAsState(initial = null)
                 val canLoadMore by viewModel.canLoadMore.observeAsState(false)
                 val refreshing by viewModel.isUpdating.observeAsState(false)
+                val organizations by viewModel.organizations.observeAsState(emptyList())
                 val querySearch = arguments?.getString(ARG_SEARCH_QUERY, "") ?: ""
 
                 DiscoveryScreen(
@@ -159,7 +160,8 @@ class NativeDiscoveryFragment : Fragment() {
                     },
                     onSettingsClick = {
                         router.navigateToSettings(requireActivity().supportFragmentManager)
-                    }
+                    },
+                    organizations = organizations,
                 )
                 LaunchedEffect(uiState) {
                     if (querySearch.isNotEmpty()) {
@@ -209,6 +211,7 @@ internal fun DiscoveryScreen(
     onSignInClick: () -> Unit,
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    organizations: List<Organization>,
 ) {
     val scrollState = rememberLazyListState()
     val firstVisibleIndex = remember {
@@ -220,13 +223,6 @@ internal fun DiscoveryScreen(
     var showOrganizationFilter by rememberSaveable {
         mutableStateOf(false)
     }
-    val organizations = remember {
-        listOf(
-            Organization("org1", "Org 1", "https://sherab.share.zrok.io/media/partner/BDRC_Logo.png"),
-            Organization("org2", "Org 2", "https://sherab.share.zrok.io/media/partner/Palpung_logo_g8hgck6.png"),
-        )
-    }
-
     var isInternetConnectionShown by rememberSaveable {
         mutableStateOf(false)
     }
@@ -526,7 +522,8 @@ private fun DiscoveryScreenPreview() {
             onRegisterClick = {},
             onBackClick = {},
             onSettingsClick = {},
-            canShowBackButton = false
+            canShowBackButton = false,
+            organizations = emptyList(),
         )
     }
 }
@@ -557,7 +554,8 @@ private fun DiscoveryScreenTabletPreview() {
             onRegisterClick = {},
             onBackClick = {},
             onSettingsClick = {},
-            canShowBackButton = false
+            canShowBackButton = false,
+            organizations = emptyList(),
         )
     }
 }

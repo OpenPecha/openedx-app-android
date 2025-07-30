@@ -4,6 +4,7 @@ import okhttp3.ResponseBody
 import org.openedx.core.data.model.EnrollBody
 import org.openedx.discovery.data.model.CourseDetails
 import org.openedx.discovery.data.model.CourseList
+import org.openedx.discovery.domain.model.Organization
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -35,4 +36,7 @@ interface DiscoveryApi {
 
     @POST("/api/enrollment/v1/enrollment")
     suspend fun enrollInACourse(@Body enrollBody: EnrollBody): ResponseBody
+
+    @GET("api/partners/")
+    suspend fun getOrganizations(): List<Organization>
 }

@@ -23,6 +23,10 @@
         <item quantity="one">Found %s course on your request</item>
         <item quantity="other">Found %s courses on your request</item>
     </plurals>
+    <plurals name="discovery_filtered_found_courses">
+        <item quantity="one">Viewing %d course</item>
+        <item quantity="other">Viewing %d courses</item>
+    </plurals>
 
     <!-- Accessibility -->
     <string name="discovery_accessibility_play_video">Play video</string>

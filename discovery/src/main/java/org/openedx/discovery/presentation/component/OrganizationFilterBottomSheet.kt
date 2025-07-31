@@ -162,20 +162,13 @@ fun OrganizationCard(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .then(
-                    if (isSelected) Modifier.border(
-                        width = 2.dp,
-                        color = MaterialTheme.colors.primary,
-                        shape = CircleShape
-                    ) else Modifier.border(
-                        width = 1.dp,
-                        color = MaterialTheme.appColors.secondary,
-                        shape = CircleShape
-                    )
+                .size(80.dp)
+                .border(
+                    width = if (isSelected) 2.dp else 1.dp,
+                    color = if (isSelected) MaterialTheme.colors.primary else MaterialTheme.appColors.secondary,
+                    shape = CircleShape
                 )
-                .padding(8.dp) // inner padding to give logo space
+                .clip(CircleShape)
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -184,21 +177,23 @@ fun OrganizationCard(
                     .build(),
                 contentDescription = organization.name,
                 contentScale = ContentScale.Fit, // Show entire logo
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp) // inner padding to give logo space
             )
         }
 
         // Organization name
         Text(
             text = organization.name,
-            style = MaterialTheme.appTypography.titleSmall,
+            style = MaterialTheme.appTypography.bodySmall,
             color = MaterialTheme.appColors.textPrimary,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .padding(top = 6.dp)
-                .width(80.dp)
+                .width(85.dp)
         )
     }
 }

@@ -97,10 +97,9 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -532,22 +531,35 @@ internal fun DiscoveryScreen(
                                         contentPadding = contentPaddings,
                                         state = scrollState
                                     ) {
+                                        val selectedOrg = viewModel.selectedOrg.value
                                         item {
                                             Column {
-                                                Text(
-                                                    modifier = Modifier.testTag("txt_discovery_new"),
-                                                    text = stringResource(id = R.string.discovery_discovery_new),
-                                                    color = MaterialTheme.appColors.textPrimary,
-                                                    style = MaterialTheme.appTypography.displaySmall
-                                                )
-                                                Text(
-                                                    modifier = Modifier
-                                                        .testTag("txt_discovery_lets_find")
-                                                        .padding(top = 4.dp),
-                                                    text = stringResource(id = R.string.discovery_lets_find),
-                                                    color = MaterialTheme.appColors.textPrimary,
-                                                    style = MaterialTheme.appTypography.titleSmall
-                                                )
+                                                if (selectedOrg != null) {
+                                                    Text(
+                                                        text = pluralStringResource(
+                                                            id = R.plurals.discovery_filtered_found_courses,
+                                                            count = state.numCourses,
+                                                            formatArgs = arrayOf(state.numCourses)
+                                                        ),
+                                                        color = MaterialTheme.appColors.textPrimary,
+                                                        style = MaterialTheme.appTypography.titleMedium
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        modifier = Modifier.testTag("txt_discovery_new"),
+                                                        text = stringResource(id = R.string.discovery_discovery_new),
+                                                        color = MaterialTheme.appColors.textPrimary,
+                                                        style = MaterialTheme.appTypography.displaySmall
+                                                    )
+                                                    Text(
+                                                        modifier = Modifier
+                                                            .testTag("txt_discovery_lets_find")
+                                                            .padding(top = 4.dp),
+                                                        text = stringResource(id = R.string.discovery_lets_find),
+                                                        color = MaterialTheme.appColors.textPrimary,
+                                                        style = MaterialTheme.appTypography.titleSmall
+                                                    )
+                                                }
                                                 Spacer(modifier = Modifier.height(14.dp))
                                             }
                                         }
@@ -659,7 +671,7 @@ private fun DiscoveryScreenPreview() {
         DiscoveryScreen(
             windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
             state = DiscoveryUIState.Courses(
-                listOf(
+                courses = listOf(
                     mockCourse,
                     mockCourse,
                     mockCourse,
@@ -669,7 +681,8 @@ private fun DiscoveryScreenPreview() {
                     mockCourse,
                     mockCourse,
                     mockCourse,
-                )
+                ),
+                numCourses = 10
             ),
             uiMessage = null,
             apiHostUrl = "",
@@ -703,7 +716,7 @@ private fun DiscoveryScreenTabletPreview() {
         DiscoveryScreen(
             windowSize = WindowSize(WindowType.Medium, WindowType.Medium),
             state = DiscoveryUIState.Courses(
-                listOf(
+                courses = listOf(
                     mockCourse,
                     mockCourse,
                     mockCourse,
@@ -713,7 +726,8 @@ private fun DiscoveryScreenTabletPreview() {
                     mockCourse,
                     mockCourse,
                     mockCourse,
-                )
+                ),
+                numCourses = 10
             ),
             uiMessage = null,
             apiHostUrl = "",

@@ -104,7 +104,13 @@ class NativeDiscoveryViewModel(
                     page = -1
                     coursesList.addAll(cachedList)
                 }
-                _uiState.value = DiscoveryUIState.Courses(ArrayList(coursesList))
+                val totalCount = response?.pagination?.count
+                _uiState.value = totalCount?.let {
+                    DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = it
+                    )
+                }
             } catch (e: Exception) {
                 if (e.isInternetError()) {
                     _uiMessage.value =
@@ -147,7 +153,13 @@ class NativeDiscoveryViewModel(
                 }
                 coursesList.clear()
                 coursesList.addAll(response.results)
-                _uiState.value = DiscoveryUIState.Courses(ArrayList(coursesList))
+                val totalCount = response.pagination.count
+                _uiState.value = totalCount.let {
+                    DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = it
+                    )
+                }
             } catch (e: Exception) {
                 if (e.isInternetError()) {
                     _uiMessage.value =

@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,9 +22,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -59,6 +63,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -380,6 +386,49 @@ internal fun DiscoveryScreen(
                             modifier = Modifier.size(30.dp),
                             tint = MaterialTheme.appColors.textPrimary
                         )
+                    }
+                }
+                selectedOrganization?.let { selectedOrg ->
+                    Surface(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp, vertical = 8.dp)
+                            .then(searchTabWidth),
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.appColors.primary,
+                        border = BorderStroke(1.dp, MaterialTheme.appColors.primary),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(vertical = 8.dp),
+                                text = selectedOrg.name,
+                                color = MaterialTheme.appColors.surface,
+                                style = MaterialTheme.appTypography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            IconButton(
+                                modifier = Modifier.size(36.dp),
+                                onClick = {
+                                    onOrganizationSelected(null)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(id = R.string.filter_courses),
+                                    tint = MaterialTheme.appColors.surface,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))

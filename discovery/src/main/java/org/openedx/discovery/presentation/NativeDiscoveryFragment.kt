@@ -143,7 +143,7 @@ class NativeDiscoveryFragment : Fragment() {
                         viewModel.fetchMore()
                     },
                     onSwipeRefresh = {
-                        viewModel.updateData()
+                        viewModel.refreshCourses()
                     },
                     onReloadClick = {
                         viewModel.getCoursesList()

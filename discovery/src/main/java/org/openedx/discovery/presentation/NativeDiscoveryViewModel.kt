@@ -188,4 +188,8 @@ class NativeDiscoveryViewModel(
         coursesList.clear()
         getCoursesList(organization = currentOrganization)
     }
+
+    fun refreshCourses() {
+        updateData(organization = currentOrganization)
+    }
 }

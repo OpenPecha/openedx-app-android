@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,16 +86,22 @@ import org.openedx.foundation.presentation.WindowType
 import org.openedx.foundation.presentation.rememberWindowSize
 import org.openedx.foundation.presentation.windowSizeValue
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.openedx.discovery.domain.model.Organization
@@ -428,6 +435,53 @@ internal fun DiscoveryScreen(
                         }
                     }
 
+                    val selectedOrg = viewModel.selectedOrg.value
+
+                    if (selectedOrg != null) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.appColors.primary,
+                            border = BorderStroke(1.dp, MaterialTheme.colors.primary),
+                            elevation = 2.dp,
+                            modifier = Modifier
+                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                .wrapContentWidth()
+                                .heightIn(min = 40.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 8.dp)
+                                    .wrapContentWidth()
+                            ) {
+                                Text(
+                                    text = selectedOrg.organization,
+                                    color = MaterialTheme.appColors.surface,
+                                    style = MaterialTheme.appTypography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .padding(vertical = 8.dp)
+                                )
+                                IconButton(
+                                    onClick = {
+                                        viewModel.selectedOrg.value = null
+                                        viewModel.searchCoursesByOrganization("")
+                                    },
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .padding(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear filter",
+                                        tint = MaterialTheme.appColors.surface,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 Surface(

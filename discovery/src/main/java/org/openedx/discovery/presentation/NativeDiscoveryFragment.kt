@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -438,45 +439,61 @@ internal fun DiscoveryScreen(
                     val selectedOrg = viewModel.selectedOrg.value
 
                     if (selectedOrg != null) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.appColors.primary,
-                            border = BorderStroke(1.dp, MaterialTheme.colors.primary),
-                            elevation = 2.dp,
+                        Row(
                             modifier = Modifier
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                                .wrapContentWidth()
-                                .heightIn(min = 40.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            // Left Pill with Organization Name
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.appColors.primary,
+                                border = BorderStroke(1.dp, MaterialTheme.colors.primary),
+                                elevation = 2.dp,
                                 modifier = Modifier
-                                    .padding(start = 16.dp, end = 8.dp)
                                     .wrapContentWidth()
+                                    .heightIn(min = 40.dp)
                             ) {
-                                Text(
-                                    text = selectedOrg.organization,
-                                    color = MaterialTheme.appColors.surface,
-                                    style = MaterialTheme.appTypography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .padding(vertical = 8.dp)
-                                )
-                                IconButton(
-                                    onClick = {
+                                        .padding(start = 16.dp, end = 16.dp)
+                                ) {
+                                    Text(
+                                        text = selectedOrg.organization,
+                                        color = MaterialTheme.appColors.surface,
+                                        style = MaterialTheme.appTypography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                }
+                            }
+
+                            // Right Pill with "Clear" Text
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.appColors.surface,
+                                border = BorderStroke(1.dp, MaterialTheme.appColors.textFieldBorder),
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .heightIn(min = 40.dp)
+                                    .clickable {
                                         viewModel.selectedOrg.value = null
                                         viewModel.searchCoursesByOrganization("")
-                                    },
+                                    }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .padding(4.dp)
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear filter",
-                                        tint = MaterialTheme.appColors.surface,
-                                        modifier = Modifier.size(20.dp)
+                                    Text(
+                                        stringResource(id = R.string.clear),
+                                        color = MaterialTheme.appColors.textFieldHint,
+                                        style = MaterialTheme.appTypography.labelMedium
                                     )
                                 }
                             }

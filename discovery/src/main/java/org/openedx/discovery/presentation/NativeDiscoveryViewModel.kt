@@ -1,6 +1,7 @@
 package org.openedx.discovery.presentation
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -40,7 +41,9 @@ class NativeDiscoveryViewModel(
     val isRegistrationEnabled: Boolean get() = config.isRegistrationEnabled()
 
     private val _organizations = MutableLiveData<List<Organization>>()
+    private var currentOrganization: String? = null
     val organizations: LiveData<List<Organization>> = _organizations
+    val selectedOrg = mutableStateOf<Organization?>(null)
 
     private val _uiState = MutableLiveData<DiscoveryUIState>(DiscoveryUIState.Loading)
     val uiState: LiveData<DiscoveryUIState>
@@ -162,7 +165,7 @@ class NativeDiscoveryViewModel(
 
     fun fetchMore() {
         if (!isLoading && page != -1) {
-            loadCoursesInternal()
+            loadCoursesInternal(organization = currentOrganization)
         }
     }
 
@@ -215,5 +218,16 @@ class NativeDiscoveryViewModel(
                 // TODO: Check this
             }
         }
+    }
+
+    fun searchCoursesByOrganization(org: String) {
+        currentOrganization = org
+        page = 1
+        coursesList.clear()
+        getCoursesList(organization = org)
+    }
+
+    fun setSelectedOrg(org: Organization?) {
+        selectedOrg.value = org
     }
 }

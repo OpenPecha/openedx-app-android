@@ -276,10 +276,18 @@ internal fun DiscoveryScreen(
             OrganizationFilterBottomSheet(
                 orgList = organizations,
                 isLoading = false,
+                selectedOrg = viewModel.selectedOrg.value,
                 onClose = {
                     coroutineScope.launch { sheetState.hide() }
-                    // TODO: trigger filtering
+                },
+                onOrgSelected = { selectedOrg ->
+                    val selected = if (selectedOrg.organization == "all") null else selectedOrg.organization
+                    viewModel.setSelectedOrg(selectedOrg)
+                    if (selected != null) {
+                        viewModel.searchCoursesByOrganization(selected)
+                    }
                 }
+
             )
         }
     ) {

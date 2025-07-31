@@ -2,6 +2,7 @@ package org.openedx.discovery.presentation.component
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,7 +42,9 @@ import coil.request.ImageRequest
 fun OrganizationFilterBottomSheet(
     orgList: List<Organization>,
     isLoading: Boolean,
-    onClose: () -> Unit
+    selectedOrg: Organization?,
+    onClose: () -> Unit,
+    onOrgSelected: (Organization) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -69,7 +72,7 @@ fun OrganizationFilterBottomSheet(
             style = MaterialTheme.appTypography.titleMedium,
             color = MaterialTheme.appColors.textPrimary,
             modifier = Modifier
-//                .fillMaxWidth()
+                .fillMaxWidth()
                 .padding(bottom = 12.dp),
             textAlign = TextAlign.Center
         )
@@ -82,10 +85,31 @@ fun OrganizationFilterBottomSheet(
                 items(orgList.size) { index ->
                     OrganizationCard(
                         organization = orgList[index],
-                        onClick = { /* Handle click */ }
+                        isSelected = selectedOrg?.organization == orgList[index].organization,
+                        onClick = { onOrgSelected(it) }
                     )
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Apply Button
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .align(Alignment.CenterHorizontally)
+                .clip(RoundedCornerShape(30.dp))
+                .background(MaterialTheme.colors.primary)
+                .clickable { onClose() }
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(id = R.string.apply),
+                color = Color.White,
+                style = MaterialTheme.appTypography.titleMedium
+            )
         }
     }
 }
@@ -96,15 +120,17 @@ fun OrganizationFilterBottomSheet(
 @Composable
 fun OrganizationFilterBottomSheetPreview() {
     val sampleOrgs = listOf(
-        Organization("org1", "Org 1", "https://example.com/mock_logo.png" ),
-        Organization("org2", "Org 2", "https://example.com/mock_logo2.png" ),
+        Organization("org1", "https://example.com/mock_logo.png", "Org 1"),
+        Organization("org2", "https://example.com/mock_logo2.png", "Org 2"),
     )
 
     OpenEdXTheme {
         OrganizationFilterBottomSheet(
             orgList = sampleOrgs,
             isLoading = false,
-            onClose = {}
+            onClose = {},
+            onOrgSelected = {},
+            selectedOrg = sampleOrgs[0]
         )
     }
 }
@@ -112,6 +138,7 @@ fun OrganizationFilterBottomSheetPreview() {
 @Composable
 fun OrganizationCard(
     organization: Organization,
+    isSelected: Boolean,
     onClick: (Organization) -> Unit
 ) {
     Column(
@@ -120,6 +147,13 @@ fun OrganizationCard(
             .padding(8.dp)
             .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.appColors.cardViewBackground)
+            .then(
+                if (isSelected) Modifier.border(
+                    width = 2.dp,
+                    color = MaterialTheme.colors.primary,
+                    shape = MaterialTheme.shapes.medium
+                ) else Modifier
+            )
             .clickable { onClick(organization) }
             .padding(8.dp)
     ) {

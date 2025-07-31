@@ -270,7 +270,7 @@ internal fun DiscoveryScreen(
         mutableIntStateOf(scrollState.firstVisibleItemIndex)
     }
     val pullRefreshState =
-        rememberPullRefreshState(refreshing = refreshing, onRefresh = { onSwipeRefresh() })
+        rememberPullRefreshState(refreshing = refreshing, onRefresh = { viewModel.refreshCourses() })
 
     var isInternetConnectionShown by rememberSaveable {
         mutableStateOf(false)

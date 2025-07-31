@@ -230,4 +230,11 @@ class NativeDiscoveryViewModel(
     fun setSelectedOrg(org: Organization?) {
         selectedOrg.value = org
     }
+
+    fun refreshCourses() {
+        selectedOrg.value?.let {
+            searchCoursesByOrganization(it.organization)
+        } ?: getCoursesList()
+    }
+
 }

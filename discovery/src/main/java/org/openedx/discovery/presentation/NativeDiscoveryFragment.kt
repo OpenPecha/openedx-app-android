@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +60,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -468,20 +468,32 @@ internal fun DiscoveryScreen(
                                 ) {
                                     item {
                                         Column {
-                                            Text(
-                                                modifier = Modifier.testTag("txt_discovery_new"),
-                                                text = stringResource(id = R.string.discovery_discovery_new),
-                                                color = MaterialTheme.appColors.textPrimary,
-                                                style = MaterialTheme.appTypography.displaySmall
-                                            )
-                                            Text(
-                                                modifier = Modifier
-                                                    .testTag("txt_discovery_lets_find")
-                                                    .padding(top = 4.dp),
-                                                text = stringResource(id = R.string.discovery_lets_find),
-                                                color = MaterialTheme.appColors.textPrimary,
-                                                style = MaterialTheme.appTypography.titleSmall
-                                            )
+                                            if (selectedOrganization != null) {
+                                                Text(
+                                                    text = pluralStringResource(
+                                                        id = R.plurals.discovery_filtered_found_courses,
+                                                        count = state.numCourses,
+                                                        state.numCourses
+                                                    ),
+                                                    color = MaterialTheme.appColors.textPrimary,
+                                                    style = MaterialTheme.appTypography.titleMedium
+                                                )
+                                            } else {
+                                                Text(
+                                                    modifier = Modifier.testTag("txt_discovery_new"),
+                                                    text = stringResource(id = R.string.discovery_discovery_new),
+                                                    color = MaterialTheme.appColors.textPrimary,
+                                                    style = MaterialTheme.appTypography.displaySmall
+                                                )
+                                                Text(
+                                                    modifier = Modifier
+                                                        .testTag("txt_discovery_lets_find")
+                                                        .padding(top = 4.dp),
+                                                    text = stringResource(id = R.string.discovery_lets_find),
+                                                    color = MaterialTheme.appColors.textPrimary,
+                                                    style = MaterialTheme.appTypography.titleSmall
+                                                )
+                                            }
                                             Spacer(modifier = Modifier.height(14.dp))
                                         }
                                     }
@@ -567,7 +579,8 @@ private fun DiscoveryScreenPreview() {
         DiscoveryScreen(
             windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
             state = DiscoveryUIState.Courses(
-                DiscoveryMocks.courses(1)
+                courses = DiscoveryMocks.courses(1),
+                numCourses = 1
             ),
             uiMessage = null,
             apiHostUrl = "",
@@ -601,7 +614,8 @@ private fun DiscoveryScreenTabletPreview() {
         DiscoveryScreen(
             windowSize = WindowSize(WindowType.Medium, WindowType.Medium),
             state = DiscoveryUIState.Courses(
-                DiscoveryMocks.courses(1)
+                courses = DiscoveryMocks.courses(1),
+                numCourses = 1
             ),
             uiMessage = null,
             apiHostUrl = "",

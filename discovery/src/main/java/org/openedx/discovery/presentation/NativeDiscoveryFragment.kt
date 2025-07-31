@@ -112,6 +112,7 @@ class NativeDiscoveryFragment : Fragment() {
                 val canLoadMore by viewModel.canLoadMore.observeAsState(false)
                 val refreshing by viewModel.isUpdating.observeAsState(false)
                 val organizations by viewModel.organizations.observeAsState(emptyList())
+                val selectedOrganization by viewModel.selectedOrganization.observeAsState()
                 val querySearch = arguments?.getString(ARG_SEARCH_QUERY, "") ?: ""
 
                 DiscoveryScreen(
@@ -162,6 +163,10 @@ class NativeDiscoveryFragment : Fragment() {
                         router.navigateToSettings(requireActivity().supportFragmentManager)
                     },
                     organizations = organizations,
+                    selectedOrganization = selectedOrganization,
+                    onOrganizationSelected = { organization ->
+                        viewModel.searchCoursesByOrganization(organization)
+                    },
                 )
                 LaunchedEffect(uiState) {
                     if (querySearch.isNotEmpty()) {
@@ -212,6 +217,8 @@ internal fun DiscoveryScreen(
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     organizations: List<Organization>,
+    selectedOrganization: Organization?,
+    onOrganizationSelected: (Organization?) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
     val firstVisibleIndex = remember {
@@ -235,7 +242,13 @@ internal fun DiscoveryScreen(
             OrganizationFilterBottomSheet(
                 orgList = organizations,
                 isLoading = false,
-                onClose = { showOrganizationFilter = false }
+                selectedOrg = selectedOrganization,
+                onClose = { showOrganizationFilter = false },
+                onOrgSelected = { organization ->
+                    onOrganizationSelected(
+                        if (organization.organization == "all") null else organization
+                    )
+                }
             )
         }
     }
@@ -524,6 +537,8 @@ private fun DiscoveryScreenPreview() {
             onSettingsClick = {},
             canShowBackButton = false,
             organizations = emptyList(),
+            selectedOrganization = null,
+            onOrganizationSelected = {},
         )
     }
 }
@@ -556,6 +571,8 @@ private fun DiscoveryScreenTabletPreview() {
             onSettingsClick = {},
             canShowBackButton = false,
             organizations = emptyList(),
+            selectedOrganization = null,
+            onOrganizationSelected = {},
         )
     }
 }

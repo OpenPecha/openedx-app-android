@@ -33,6 +33,10 @@ class NativeDiscoveryViewModel(
     val organizations: LiveData<List<Organization>>
         get() = _organizations
 
+    private val _selectedOrganization = MutableLiveData<Organization?>(null)
+    val selectedOrganization: LiveData<Organization?>
+        get() = _selectedOrganization
+
     private val _uiState = MutableLiveData<DiscoveryUIState>(DiscoveryUIState.Loading)
     val uiState: LiveData<DiscoveryUIState>
         get() = _uiState
@@ -51,6 +55,7 @@ class NativeDiscoveryViewModel(
     private var page = 1
     private val coursesList = mutableListOf<Course>()
     private var isLoading = false
+    private var currentOrganization: String? = null
 
     init {
         getCoursesList()
@@ -99,6 +104,7 @@ class NativeDiscoveryViewModel(
         username: String? = null,
         organization: String? = null
     ) {
+        currentOrganization = organization
         _uiState.value = DiscoveryUIState.Loading
         coursesList.clear()
         loadCoursesInternal(username, organization)
@@ -110,10 +116,11 @@ class NativeDiscoveryViewModel(
     ) {
         viewModelScope.launch {
             try {
+                val requestedOrganization = organization ?: currentOrganization
                 _isUpdating.value = true
                 isLoading = true
                 page = 1
-                val response = interactor.getCoursesList(username, organization, page)
+                val response = interactor.getCoursesList(username, requestedOrganization, page)
                 if (response.pagination.next.isNotEmpty() && page != response.pagination.numPages) {
                     _canLoadMore.value = true
                     page++
@@ -137,7 +144,7 @@ class NativeDiscoveryViewModel(
 
     fun fetchMore() {
         if (!isLoading && page != -1) {
-            loadCoursesInternal()
+            loadCoursesInternal(organization = currentOrganization)
         }
     }
 
@@ -172,5 +179,13 @@ class NativeDiscoveryViewModel(
                 )
             }
         }
+    }
+
+    fun searchCoursesByOrganization(organization: Organization?) {
+        _selectedOrganization.value = organization
+        currentOrganization = organization?.organization
+        page = 1
+        coursesList.clear()
+        getCoursesList(organization = currentOrganization)
     }
 }

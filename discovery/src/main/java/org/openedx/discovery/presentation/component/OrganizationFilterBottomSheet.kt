@@ -30,7 +30,13 @@ import org.openedx.core.ui.theme.appColors
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -81,12 +87,17 @@ fun OrganizationFilterBottomSheet(
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
-            LazyVerticalGrid(columns = GridCells.Fixed(3)) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+            ) {
                 items(orgList.size) { index ->
                     OrganizationCard(
                         organization = orgList[index],
                         isSelected = selectedOrg?.organization == orgList[index].organization,
-                        onClick = { onOrgSelected(it) }
+                        onClick = { onOrgSelected(orgList[index]) }
                     )
                 }
             }
@@ -145,28 +156,39 @@ fun OrganizationCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(8.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.appColors.cardViewBackground)
-            .then(
-                if (isSelected) Modifier.border(
-                    width = 2.dp,
-                    color = MaterialTheme.colors.primary,
-                    shape = MaterialTheme.shapes.medium
-                ) else Modifier
-            )
             .clickable { onClick(organization) }
-            .padding(8.dp)
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(organization.logo)  // logo URL from API
-                .crossfade(true)
-                .build(),
-            contentDescription = organization.name,
+        // Circular card background with border if selected
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
-                .height(50.dp),
-            contentScale = ContentScale.Fit
-        )
+                .size(72.dp)
+                .clip(CircleShape)
+                .then(
+                    if (isSelected) Modifier.border(
+                        width = 2.dp,
+                        color = MaterialTheme.colors.primary,
+                        shape = CircleShape
+                    ) else Modifier.border(
+                        width = 1.dp,
+                        color = MaterialTheme.appColors.secondary,
+                        shape = CircleShape
+                    )
+                )
+                .padding(8.dp) // inner padding to give logo space
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(organization.logo)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = organization.name,
+                contentScale = ContentScale.Fit, // Show entire logo
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        // Organization name
         Text(
             text = organization.name,
             style = MaterialTheme.appTypography.titleSmall,
@@ -174,7 +196,9 @@ fun OrganizationCard(
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier
+                .padding(top = 6.dp)
+                .width(80.dp)
         )
     }
 }

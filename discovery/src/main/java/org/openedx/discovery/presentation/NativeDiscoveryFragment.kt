@@ -1,116 +1,29 @@
 package org.openedx.discovery.presentation
 
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material.rememberScaffoldState
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.openedx.core.AppUpdateState
 import org.openedx.core.AppUpdateState.wasUpdateDialogClosed
-import org.openedx.core.domain.model.Media
 import org.openedx.core.presentation.dialog.appupgrade.AppUpgradeDialogFragment
-import org.openedx.core.presentation.global.appupgrade.AppUpgradeRecommendedBox
-import org.openedx.core.system.notifier.app.AppUpgradeEvent
-import org.openedx.core.ui.AuthButtonsPanel
-import org.openedx.core.ui.BackBtn
-import org.openedx.core.ui.HandleUIMessage
-import org.openedx.core.ui.OfflineModeDialog
-import org.openedx.core.ui.StaticSearchBar
-import org.openedx.core.ui.Toolbar
-import org.openedx.core.ui.displayCutoutForLandscape
-import org.openedx.core.ui.shouldLoadMore
-import org.openedx.core.ui.statusBarsInset
 import org.openedx.core.ui.theme.OpenEdXTheme
-import org.openedx.core.ui.theme.appColors
-import org.openedx.core.ui.theme.appTypography
-import org.openedx.discovery.R
-import org.openedx.discovery.domain.model.Course
-import org.openedx.discovery.presentation.NativeDiscoveryFragment.Companion.LOAD_MORE_THRESHOLD
-import org.openedx.discovery.presentation.ui.DiscoveryCourseItem
-import org.openedx.foundation.presentation.UIMessage
-import org.openedx.foundation.presentation.WindowSize
-import org.openedx.foundation.presentation.WindowType
 import org.openedx.foundation.presentation.rememberWindowSize
-import org.openedx.foundation.presentation.windowSizeValue
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.rememberModalBottomSheetState
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
-import org.openedx.discovery.domain.model.Organization
-import org.openedx.discovery.presentation.component.OrganizationFilterBottomSheet
+import org.openedx.discovery.presentation.ui.DiscoveryScreen
+import androidx.compose.runtime.collectAsState
 
 
 class NativeDiscoveryFragment : Fragment() {
 
-    private val viewModel by viewModel<NativeDiscoveryViewModel>()
     private val router: DiscoveryRouter by inject()
 
     override fun onCreateView(
@@ -119,6 +32,9 @@ class NativeDiscoveryFragment : Fragment() {
         savedInstanceState: Bundle?,
     ) = ComposeView(requireContext()).apply {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+
+        val viewModel: NativeDiscoveryViewModel by viewModel()
+
         setContent {
             OpenEdXTheme {
                 val windowSize = rememberWindowSize()
@@ -130,6 +46,7 @@ class NativeDiscoveryFragment : Fragment() {
                 val appUpgradeEvent by viewModel.appUpgradeEvent.observeAsState()
                 val wasUpdateDialogClosed by remember { wasUpdateDialogClosed }
                 val querySearch = arguments?.getString(ARG_SEARCH_QUERY, "") ?: ""
+                val selectedOrg by viewModel.selectedOrg.collectAsState()
 
                 DiscoveryScreen(
                     windowSize = windowSize,
@@ -172,7 +89,7 @@ class NativeDiscoveryFragment : Fragment() {
                         viewModel.fetchMore()
                     },
                     onSwipeRefresh = {
-                        viewModel.updateData()
+                        viewModel.updateData(organization=selectedOrg?.organization)
                     },
                     onReloadClick = {
                         viewModel.getCoursesList()
@@ -199,6 +116,11 @@ class NativeDiscoveryFragment : Fragment() {
                     },
                     organizations = viewModel.organizations.observeAsState(emptyList()).value,
                     fetchOrganizations = { viewModel.fetchOrganizations() },
+                    selectedOrg = selectedOrg,
+                    onOrgSelected = { viewModel.setSelectedOrg(it) },
+                    onClearOrgClick = {
+                        viewModel.clearSelectedOrg()
+                    },
                 )
                 LaunchedEffect(uiState) {
                     if (querySearch.isNotEmpty()) {
@@ -225,554 +147,3 @@ class NativeDiscoveryFragment : Fragment() {
         }
     }
 }
-
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
-@Composable
-internal fun DiscoveryScreen(
-    windowSize: WindowSize,
-    state: DiscoveryUIState,
-    uiMessage: UIMessage?,
-    apiHostUrl: String,
-    canLoadMore: Boolean,
-    refreshing: Boolean,
-    hasInternetConnection: Boolean,
-    canShowBackButton: Boolean,
-    isUserLoggedIn: Boolean,
-    isRegistrationEnabled: Boolean,
-    appUpgradeParameters: AppUpdateState.AppUpgradeParameters,
-    onSearchClick: () -> Unit,
-    onSwipeRefresh: () -> Unit,
-    onReloadClick: () -> Unit,
-    paginationCallback: () -> Unit,
-    onItemClick: (Course) -> Unit,
-    onRegisterClick: () -> Unit,
-    onSignInClick: () -> Unit,
-    onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    organizations: List<Organization>,
-    fetchOrganizations: () -> Unit, // TODO: Check this
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(
-        initialValue = ModalBottomSheetValue.Hidden,
-        skipHalfExpanded = true
-    )
-    val viewModel: NativeDiscoveryViewModel = viewModel()
-
-
-    LaunchedEffect(Unit) {
-        viewModel.fetchOrganizations()
-    }
-
-    val scaffoldState = rememberScaffoldState()
-    val scrollState = rememberLazyListState()
-    val firstVisibleIndex = remember {
-        mutableIntStateOf(scrollState.firstVisibleItemIndex)
-    }
-    val pullRefreshState =
-        rememberPullRefreshState(refreshing = refreshing, onRefresh = { viewModel.refreshCourses() })
-
-    var isInternetConnectionShown by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    ModalBottomSheetLayout(
-        sheetState = sheetState,
-        sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        sheetContent = {
-            OrganizationFilterBottomSheet(
-                orgList = organizations,
-                isLoading = false,
-                selectedOrg = viewModel.selectedOrg.value,
-                onClose = {
-                    coroutineScope.launch { sheetState.hide() }
-                },
-                onOrgSelected = { selectedOrg ->
-                    val selected = if (selectedOrg.organization == "all") null else selectedOrg.organization
-                    viewModel.setSelectedOrg(selectedOrg)
-                    if (selected != null) {
-                        viewModel.searchCoursesByOrganization(selected)
-                    }
-                }
-
-            )
-        }
-    ) {
-        Scaffold(
-            topBar = {
-            },
-            scaffoldState = scaffoldState,
-            modifier = Modifier
-                .fillMaxSize()
-                .semantics {
-                    testTagsAsResourceId = true
-                },
-            backgroundColor = MaterialTheme.appColors.background,
-            bottomBar = {
-                if (!isUserLoggedIn) {
-                    Box(
-                        modifier = Modifier
-                            .padding(
-                                horizontal = 16.dp,
-                                vertical = 32.dp,
-                            )
-                            .navigationBarsPadding()
-                    ) {
-                        AuthButtonsPanel(
-                            onRegisterClick = onRegisterClick,
-                            onSignInClick = onSignInClick,
-                            showRegisterButton = isRegistrationEnabled
-                        )
-                    }
-                }
-            }
-        ) {
-
-            val searchTabWidth by remember(key1 = windowSize) {
-                mutableStateOf(
-                    windowSize.windowSizeValue(
-                        expanded = Modifier.widthIn(Dp.Unspecified, 420.dp),
-                        compact = Modifier.fillMaxWidth()
-                    )
-                )
-            }
-
-            val contentWidth by remember(key1 = windowSize) {
-                mutableStateOf(
-                    windowSize.windowSizeValue(
-                        expanded = Modifier.widthIn(Dp.Unspecified, 560.dp),
-                        compact = Modifier.fillMaxWidth()
-                    )
-                )
-            }
-
-            val contentPaddings by remember(key1 = windowSize) {
-                mutableStateOf(
-                    windowSize.windowSizeValue(
-                        expanded = PaddingValues(
-                            top = 32.dp,
-                            bottom = 40.dp
-                        ),
-                        compact = PaddingValues(horizontal = 24.dp, vertical = 20.dp)
-                    )
-                )
-            }
-
-            HandleUIMessage(uiMessage = uiMessage, scaffoldState = scaffoldState)
-
-            if (canShowBackButton) {
-                Box(
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    BackBtn(
-                        modifier = Modifier.padding(end = 16.dp),
-                        tint = MaterialTheme.appColors.primary
-                    ) {
-                        onBackClick()
-                    }
-                }
-            }
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(it)
-                    .statusBarsInset()
-                    .displayCutoutForLandscape(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Toolbar(
-                        label = stringResource(id = R.string.discovery_Discovery),
-                        canShowBackBtn = canShowBackButton,
-                        canShowSettingsIcon = !canShowBackButton,
-                        onBackClick = onBackClick,
-                        onSettingsClick = onSettingsClick
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // TODO: Check here:
-                    // Making changes here
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .then(searchTabWidth)
-                            .height(48.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        StaticSearchBar(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            onClick = {
-                                onSearchClick()
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        IconButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    sheetState.show()
-                                }
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_filter),
-                                contentDescription = stringResource(id = R.string.filter_courses),
-                                modifier = Modifier.size(30.dp),
-                                tint = MaterialTheme.appColors.textPrimary
-                            )
-                        }
-                    }
-
-                    val selectedOrg = viewModel.selectedOrg.value
-
-                    if (selectedOrg != null) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Left Pill with Organization Name
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.appColors.primary,
-                                border = BorderStroke(1.dp, MaterialTheme.colors.primary),
-                                elevation = 2.dp,
-                                modifier = Modifier
-                                    .wrapContentWidth()
-                                    .heightIn(min = 40.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .padding(start = 16.dp, end = 16.dp)
-                                ) {
-                                    Text(
-                                        text = selectedOrg.organization,
-                                        color = MaterialTheme.appColors.surface,
-                                        style = MaterialTheme.appTypography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(vertical = 8.dp)
-                                    )
-                                }
-                            }
-
-                            // Right Pill with "Clear" Text
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.appColors.surface,
-                                border = BorderStroke(1.dp, MaterialTheme.appColors.textFieldBorder),
-                                modifier = Modifier
-                                    .wrapContentWidth()
-                                    .heightIn(min = 40.dp)
-                                    .clickable {
-                                        viewModel.selectedOrg.value = null
-                                        viewModel.searchCoursesByOrganization("")
-                                    }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                                ) {
-                                    Text(
-                                        stringResource(id = R.string.clear),
-                                        color = MaterialTheme.appColors.textFieldHint,
-                                        style = MaterialTheme.appTypography.labelMedium
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-                Surface(
-                    color = MaterialTheme.appColors.background
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pullRefresh(pullRefreshState)
-                    ) {
-                        when (state) {
-                            is DiscoveryUIState.Loading -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.appColors.primary)
-                                }
-                            }
-
-                            is DiscoveryUIState.Courses -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    LazyColumn(
-                                        Modifier
-                                            .fillMaxHeight()
-                                            .then(contentWidth),
-                                        contentPadding = contentPaddings,
-                                        state = scrollState
-                                    ) {
-                                        val selectedOrg = viewModel.selectedOrg.value
-                                        item {
-                                            Column {
-                                                if (selectedOrg != null) {
-                                                    Text(
-                                                        text = pluralStringResource(
-                                                            id = R.plurals.discovery_filtered_found_courses,
-                                                            count = state.numCourses,
-                                                            formatArgs = arrayOf(state.numCourses)
-                                                        ),
-                                                        color = MaterialTheme.appColors.textPrimary,
-                                                        style = MaterialTheme.appTypography.titleMedium
-                                                    )
-                                                } else {
-                                                    Text(
-                                                        modifier = Modifier.testTag("txt_discovery_new"),
-                                                        text = stringResource(id = R.string.discovery_discovery_new),
-                                                        color = MaterialTheme.appColors.textPrimary,
-                                                        style = MaterialTheme.appTypography.displaySmall
-                                                    )
-                                                    Text(
-                                                        modifier = Modifier
-                                                            .testTag("txt_discovery_lets_find")
-                                                            .padding(top = 4.dp),
-                                                        text = stringResource(id = R.string.discovery_lets_find),
-                                                        color = MaterialTheme.appColors.textPrimary,
-                                                        style = MaterialTheme.appTypography.titleSmall
-                                                    )
-                                                }
-                                                Spacer(modifier = Modifier.height(14.dp))
-                                            }
-                                        }
-                                        items(state.courses) { course ->
-                                            DiscoveryCourseItem(
-                                                apiHostUrl = apiHostUrl,
-                                                course = course,
-                                                windowSize = windowSize,
-                                                onClick = {
-                                                    onItemClick(course)
-                                                }
-                                            )
-                                            Divider()
-                                        }
-                                        item {
-                                            if (canLoadMore) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(vertical = 16.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    CircularProgressIndicator(color = MaterialTheme.appColors.primary)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (scrollState.shouldLoadMore(firstVisibleIndex, LOAD_MORE_THRESHOLD)) {
-                                        paginationCallback()
-                                    }
-                                }
-                            }
-                        }
-                        PullRefreshIndicator(
-                            refreshing,
-                            pullRefreshState,
-                            Modifier.align(Alignment.TopCenter)
-                        )
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                        ) {
-                            when (appUpgradeParameters.appUpgradeEvent) {
-                                is AppUpgradeEvent.UpgradeRecommendedEvent -> {
-                                    if (appUpgradeParameters.wasUpdateDialogClosed) {
-                                        AppUpgradeRecommendedBox(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            onClick = appUpgradeParameters.onAppUpgradeRecommendedBoxClick
-                                        )
-                                    } else {
-                                        if (!AppUpdateState.wasUpdateDialogDisplayed) {
-                                            AppUpdateState.wasUpdateDialogDisplayed = true
-                                            appUpgradeParameters.appUpgradeRecommendedDialog()
-                                        }
-                                    }
-                                }
-
-                                is AppUpgradeEvent.UpgradeRequiredEvent -> {
-                                    if (!AppUpdateState.wasUpdateDialogDisplayed) {
-                                        AppUpdateState.wasUpdateDialogDisplayed = true
-                                        appUpgradeParameters.onAppUpgradeRequired()
-                                    }
-                                }
-
-                                else -> {}
-                            }
-                            if (!isInternetConnectionShown && !hasInternetConnection) {
-                                OfflineModeDialog(
-                                    Modifier
-                                        .fillMaxWidth(),
-                                    onDismissCLick = {
-                                        isInternetConnectionShown = true
-                                    },
-                                    onReloadClick = {
-                                        isInternetConnectionShown = true
-                                        onReloadClick()
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun CourseItemPreview() {
-    OpenEdXTheme {
-        DiscoveryCourseItem(
-            apiHostUrl = "",
-            course = mockCourse,
-            windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
-            onClick = {}
-        )
-    }
-}
-
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun DiscoveryScreenPreview() {
-    OpenEdXTheme {
-        DiscoveryScreen(
-            windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
-            state = DiscoveryUIState.Courses(
-                courses = listOf(
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                ),
-                numCourses = 10
-            ),
-            uiMessage = null,
-            apiHostUrl = "",
-            onSearchClick = {},
-            paginationCallback = {},
-            onSwipeRefresh = {},
-            onItemClick = {},
-            onReloadClick = {},
-            canLoadMore = false,
-            refreshing = false,
-            hasInternetConnection = true,
-            isUserLoggedIn = false,
-            isRegistrationEnabled = true,
-            appUpgradeParameters = AppUpdateState.AppUpgradeParameters(),
-            onSignInClick = {},
-            onRegisterClick = {},
-            onBackClick = {},
-            onSettingsClick = {},
-            canShowBackButton = false,
-            organizations = listOf(),
-            fetchOrganizations = {},
-        )
-    }
-}
-
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, device = Devices.NEXUS_9)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.NEXUS_9)
-@Composable
-private fun DiscoveryScreenTabletPreview() {
-    OpenEdXTheme {
-        DiscoveryScreen(
-            windowSize = WindowSize(WindowType.Medium, WindowType.Medium),
-            state = DiscoveryUIState.Courses(
-                courses = listOf(
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                    mockCourse,
-                ),
-                numCourses = 10
-            ),
-            uiMessage = null,
-            apiHostUrl = "",
-            onSearchClick = {},
-            paginationCallback = {},
-            onSwipeRefresh = {},
-            onItemClick = {},
-            onReloadClick = {},
-            canLoadMore = false,
-            refreshing = false,
-            hasInternetConnection = true,
-            isUserLoggedIn = true,
-            isRegistrationEnabled = true,
-            appUpgradeParameters = AppUpdateState.AppUpgradeParameters(),
-            onSignInClick = {},
-            onRegisterClick = {},
-            onBackClick = {},
-            onSettingsClick = {},
-            canShowBackButton = false,
-            organizations = listOf(),
-            fetchOrganizations = {},
-        )
-    }
-}
-
-private val mockCourse = Course(
-    id = "id",
-    blocksUrl = "blocksUrl",
-    courseId = "courseId",
-    effort = "effort",
-    enrollmentStart = null,
-    enrollmentEnd = null,
-    hidden = false,
-    invitationOnly = false,
-    media = Media(),
-    mobileAvailable = true,
-    name = "Test course",
-    number = "number",
-    org = "EdX",
-    pacing = "pacing",
-    shortDescription = "shortDescription",
-    start = "start",
-    end = "end",
-    startDisplay = "startDisplay",
-    startType = "startType",
-    overview = "",
-    isEnrolled = false
-)

@@ -1,11 +1,11 @@
 package org.openedx.discovery.presentation
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import org.openedx.core.R
@@ -43,7 +43,7 @@ class NativeDiscoveryViewModel(
     private val _organizations = MutableLiveData<List<Organization>>()
     private var currentOrganization: String? = null
     val organizations: LiveData<List<Organization>> = _organizations
-    val selectedOrg = mutableStateOf<Organization?>(null)
+    val selectedOrg = MutableStateFlow<Organization?>(null)
 
     private val _uiState = MutableLiveData<DiscoveryUIState>(DiscoveryUIState.Loading)
     val uiState: LiveData<DiscoveryUIState>
@@ -241,6 +241,16 @@ class NativeDiscoveryViewModel(
 
     fun setSelectedOrg(org: Organization?) {
         selectedOrg.value = org
+        org?.let {
+            searchCoursesByOrganization(it.organization)
+        }
+    }
+
+    fun clearSelectedOrg() {
+        selectedOrg.value = null
+        currentOrganization = null
+        page = 1
+        getCoursesList()
     }
 
     fun refreshCourses() {
@@ -248,5 +258,4 @@ class NativeDiscoveryViewModel(
             searchCoursesByOrganization(it.organization)
         } ?: getCoursesList()
     }
-
 }

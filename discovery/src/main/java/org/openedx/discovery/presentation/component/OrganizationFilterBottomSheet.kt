@@ -30,17 +30,16 @@ import org.openedx.core.ui.theme.appColors
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.times
 import coil.request.ImageRequest
 
 
@@ -87,18 +86,24 @@ fun OrganizationFilterBottomSheet(
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
+                    .heightIn(max = 2 * 120.dp) // Height of 2 org rows (including padding/margin)
             ) {
-                items(orgList.size) { index ->
-                    OrganizationCard(
-                        organization = orgList[index],
-                        isSelected = selectedOrg?.organization == orgList[index].organization,
-                        onClick = { onOrgSelected(orgList[index]) }
-                    )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                ) {
+                    items(orgList.size) { index ->
+                        OrganizationCard(
+                            organization = orgList[index],
+                            isSelected = selectedOrg?.organization == orgList[index].organization,
+                            onClick = { onOrgSelected(orgList[index]) }
+                        )
+                    }
                 }
             }
         }

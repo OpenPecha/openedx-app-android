@@ -8,6 +8,7 @@ import org.openedx.discovery.data.model.room.CourseEntity
 import org.openedx.discovery.data.storage.DiscoveryDao
 import org.openedx.discovery.domain.model.Course
 import org.openedx.discovery.domain.model.CourseList
+import org.openedx.discovery.domain.model.Organization
 
 class DiscoveryRepository(
     private val api: DiscoveryApi,
@@ -76,5 +77,9 @@ class DiscoveryRepository(
             pageResponse.pagination.mapToDomain(),
             pageResponse.results?.map { it.mapToDomain() } ?: emptyList()
         )
+    }
+
+    suspend fun getOrganizations(): List<Organization> {
+        return api.getOrganizations()
     }
 }

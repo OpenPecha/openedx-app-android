@@ -1,9 +1,11 @@
 package org.openedx.discovery.presentation
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import org.openedx.core.R
@@ -12,8 +14,10 @@ import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.system.connection.NetworkConnection
 import org.openedx.core.system.notifier.app.AppNotifier
 import org.openedx.core.system.notifier.app.AppUpgradeEvent
+import org.openedx.discovery.data.repository.DiscoveryRepository
 import org.openedx.discovery.domain.interactor.DiscoveryInteractor
 import org.openedx.discovery.domain.model.Course
+import org.openedx.discovery.domain.model.Organization
 import org.openedx.foundation.extension.isInternetError
 import org.openedx.foundation.presentation.BaseViewModel
 import org.openedx.foundation.presentation.SingleEventLiveData
@@ -28,12 +32,18 @@ class NativeDiscoveryViewModel(
     private val analytics: DiscoveryAnalytics,
     private val appNotifier: AppNotifier,
     private val corePreferences: CorePreferences,
+    private val repository: DiscoveryRepository
 ) : BaseViewModel() {
 
     val apiHostUrl get() = config.getApiHostURL()
     val isUserLoggedIn get() = corePreferences.user != null
     val canShowBackButton get() = config.isPreLoginExperienceEnabled() && !isUserLoggedIn
     val isRegistrationEnabled: Boolean get() = config.isRegistrationEnabled()
+
+    private val _organizations = MutableLiveData<List<Organization>>()
+    private var currentOrganization: String? = null
+    val organizations: LiveData<List<Organization>> = _organizations
+    val selectedOrg = MutableStateFlow<Organization?>(null)
 
     private val _uiState = MutableLiveData<DiscoveryUIState>(DiscoveryUIState.Loading)
     val uiState: LiveData<DiscoveryUIState>
@@ -94,7 +104,13 @@ class NativeDiscoveryViewModel(
                     page = -1
                     coursesList.addAll(cachedList)
                 }
-                _uiState.value = DiscoveryUIState.Courses(ArrayList(coursesList))
+                val totalCount = response?.pagination?.count
+                _uiState.value = totalCount?.let {
+                    DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = it
+                    )
+                }
             } catch (e: Exception) {
                 if (e.isInternetError()) {
                     _uiMessage.value =
@@ -137,7 +153,13 @@ class NativeDiscoveryViewModel(
                 }
                 coursesList.clear()
                 coursesList.addAll(response.results)
-                _uiState.value = DiscoveryUIState.Courses(ArrayList(coursesList))
+                val totalCount = response.pagination.count
+                _uiState.value = totalCount.let {
+                    DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = it
+                    )
+                }
             } catch (e: Exception) {
                 if (e.isInternetError()) {
                     _uiMessage.value =
@@ -155,7 +177,7 @@ class NativeDiscoveryViewModel(
 
     fun fetchMore() {
         if (!isLoading && page != -1) {
-            loadCoursesInternal()
+            loadCoursesInternal(organization = currentOrganization)
         }
     }
 
@@ -196,5 +218,44 @@ class NativeDiscoveryViewModel(
                 put(DiscoveryAnalyticsKey.CATEGORY.key, DiscoveryAnalyticsKey.DISCOVERY.key)
             }
         )
+    }
+
+    fun fetchOrganizations() {
+        viewModelScope.launch {
+            try {
+                val orgs = repository.getOrganizations()
+                _organizations.value = orgs
+            } catch (e: Exception) {
+                Log.e("DiscoveryViewModel", "Failed to load orgs", e)
+                // TODO: Check this
+            }
+        }
+    }
+
+    fun searchCoursesByOrganization(org: String) {
+        currentOrganization = org
+        page = 1
+        coursesList.clear()
+        getCoursesList(organization = org)
+    }
+
+    fun setSelectedOrg(org: Organization?) {
+        selectedOrg.value = org
+        org?.let {
+            searchCoursesByOrganization(it.organization)
+        }
+    }
+
+    fun clearSelectedOrg() {
+        selectedOrg.value = null
+        currentOrganization = null
+        page = 1
+        getCoursesList()
+    }
+
+    fun refreshCourses() {
+        selectedOrg.value?.let {
+            searchCoursesByOrganization(it.organization)
+        } ?: getCoursesList()
     }
 }

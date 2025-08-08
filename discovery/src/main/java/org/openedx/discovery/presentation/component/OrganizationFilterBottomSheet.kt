@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.openedx.core.ui.theme.appTypography
 import org.openedx.discovery.R
-import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.data.model.Organization
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
 import androidx.compose.ui.text.style.TextAlign

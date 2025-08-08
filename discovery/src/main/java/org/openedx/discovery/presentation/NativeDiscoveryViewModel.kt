@@ -17,7 +17,7 @@ import org.openedx.core.system.notifier.app.AppUpgradeEvent
 import org.openedx.discovery.data.repository.DiscoveryRepository
 import org.openedx.discovery.domain.interactor.DiscoveryInteractor
 import org.openedx.discovery.domain.model.Course
-import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.data.model.Organization
 import org.openedx.foundation.extension.isInternetError
 import org.openedx.foundation.presentation.BaseViewModel
 import org.openedx.foundation.presentation.SingleEventLiveData
@@ -74,6 +74,7 @@ class NativeDiscoveryViewModel(
 
     init {
         getCoursesList()
+        fetchOrganizations()
         collectAppUpgradeEvent()
     }
 
@@ -227,7 +228,6 @@ class NativeDiscoveryViewModel(
                 _organizations.value = orgs
             } catch (e: Exception) {
                 Log.e("DiscoveryViewModel", "Failed to load orgs", e)
-                // TODO: Check this
             }
         }
     }

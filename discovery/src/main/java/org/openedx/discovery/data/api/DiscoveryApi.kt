@@ -4,7 +4,7 @@ import okhttp3.ResponseBody
 import org.openedx.core.data.model.EnrollBody
 import org.openedx.discovery.data.model.CourseDetails
 import org.openedx.discovery.data.model.CourseList
-import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.data.model.Organization
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST

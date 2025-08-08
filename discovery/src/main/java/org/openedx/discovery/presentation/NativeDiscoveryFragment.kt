@@ -115,7 +115,6 @@ class NativeDiscoveryFragment : Fragment() {
                         router.navigateToSettings(requireActivity().supportFragmentManager)
                     },
                     organizations = viewModel.organizations.observeAsState(emptyList()).value,
-                    fetchOrganizations = { viewModel.fetchOrganizations() },
                     selectedOrg = selectedOrg,
                     onOrgSelected = { viewModel.setSelectedOrg(it) },
                     onClearOrgClick = {

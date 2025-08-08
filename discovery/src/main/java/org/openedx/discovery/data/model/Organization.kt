@@ -1,4 +1,4 @@
-package org.openedx.discovery.domain.model
+package org.openedx.discovery.data.model
 
 import com.google.gson.annotations.SerializedName
 

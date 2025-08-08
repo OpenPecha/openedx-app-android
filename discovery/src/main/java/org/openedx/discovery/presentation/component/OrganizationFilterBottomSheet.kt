@@ -39,7 +39,7 @@ import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
 import org.openedx.core.ui.theme.appTypography
 import org.openedx.discovery.R
-import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.data.model.Organization
 
 @Composable
 fun OrganizationFilterBottomSheet(

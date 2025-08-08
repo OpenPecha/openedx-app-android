@@ -89,8 +89,8 @@ import org.openedx.core.ui.theme.appShapes
 import org.openedx.core.ui.theme.appTypography
 import org.openedx.discovery.DiscoveryMocks
 import org.openedx.discovery.R
+import org.openedx.discovery.data.model.Organization
 import org.openedx.discovery.domain.model.Course
-import org.openedx.discovery.domain.model.Organization
 import org.openedx.discovery.presentation.DiscoveryUIState
 import org.openedx.discovery.presentation.NativeDiscoveryFragment.Companion.LOAD_MORE_THRESHOLD
 import org.openedx.discovery.presentation.component.OrganizationFilterBottomSheet

@@ -10,7 +10,7 @@ import org.openedx.core.system.connection.NetworkConnection
 import org.openedx.discovery.data.repository.DiscoveryRepository
 import org.openedx.discovery.domain.interactor.DiscoveryInteractor
 import org.openedx.discovery.domain.model.Course
-import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.data.model.Organization
 import org.openedx.foundation.presentation.BaseViewModel
 import org.openedx.foundation.system.ResourceManager
 

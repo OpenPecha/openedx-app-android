@@ -25,7 +25,8 @@ object DiscoveryMocks {
         startDisplay = "startDisplay",
         startType = "startType",
         overview = "",
-        isEnrolled = false
+        isEnrolled = false,
+        duration = "30 Days"
     )
 
     fun courses(count: Int) = List(count) { course }

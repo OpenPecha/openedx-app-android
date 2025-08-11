@@ -71,6 +71,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -432,6 +433,12 @@ private fun CourseDetailNativeContent(
         stringResource(id = R.string.discovery_enroll_now)
     }
 
+    val durationText = if (course.duration.isBlank()) {
+        stringResource(id = R.string.course_duration_unspecified)
+    } else {
+        stringResource(id = R.string.course_duration_specified, course.duration)
+    }
+
     Column {
         Box(contentAlignment = Alignment.Center) {
             ImageHeader(
@@ -501,6 +508,16 @@ private fun CourseDetailNativeContent(
                     onClick = onButtonClick
                 )
             }
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .testTag("txt_course_duration"),
+                text = durationText,
+                color = MaterialTheme.appColors.textFieldHint,
+                style = MaterialTheme.appTypography.titleSmall,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

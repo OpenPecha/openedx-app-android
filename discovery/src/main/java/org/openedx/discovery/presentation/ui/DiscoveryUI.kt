@@ -152,6 +152,16 @@ fun DiscoveryCourseItem(
         )
     }
 
+    // Workaround: Tibetan script line wrapping issue in Jetpack Compose.
+    // Adding a trailing newline forces proper height calculation and prevents clipping.
+    val adjustedCourseTitle = course.name + "\n"
+
+    val durationText = if (course.duration.isBlank()) {
+        stringResource(id = R.string.course_duration_unspecified)
+    } else {
+        stringResource(id = R.string.course_duration_specified, course.duration)
+    }
+
     Surface(
         modifier = Modifier
             .testTag("btn_course_card")
@@ -198,10 +208,21 @@ fun DiscoveryCourseItem(
                         .testTag("txt_course_title")
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    text = course.name,
+                    text = adjustedCourseTitle,
                     color = MaterialTheme.appColors.textPrimary,
                     style = MaterialTheme.appTypography.titleSmall,
-                    maxLines = 3,
+                    maxLines = 2,
+                    softWrap = true,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .testTag("txt_course_duration"),
+                    text = durationText,
+                    color = MaterialTheme.appColors.textFieldHint,
+                    style = MaterialTheme.appTypography.labelMedium,
                     overflow = TextOverflow.Ellipsis
                 )
             }

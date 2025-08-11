@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -80,6 +81,10 @@ fun OrganizationFilterBottomSheet(
             textAlign = TextAlign.Center
         )
 
+        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val columns = if (isLandscape) GridCells.Adaptive(100.dp) else GridCells.Fixed(3)
+        val bottomSheetContentHeight = if (isLandscape) 150.dp else 250.dp
+
         // Loading or Grid
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -87,20 +92,21 @@ fun OrganizationFilterBottomSheet(
             LazyVerticalGrid(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 360.dp),
-                columns = GridCells.Fixed(3),
+                    .heightIn(max = bottomSheetContentHeight)
+                    .padding(horizontal = 4.dp),
+                columns = columns,
             ) {
                 items(orgList.size) { index ->
                     OrganizationCard(
                         organization = orgList[index],
                         isSelected = selectedOrg?.organization == orgList[index].organization,
-                        onClick = { onOrgSelected(it) }
+                        onClick = { onOrgSelected(orgList[index]) }
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Box(
             modifier = Modifier
@@ -173,10 +179,14 @@ fun OrganizationCard(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(organization.logo)
                     .crossfade(true)
+                    .error(org.openedx.core.R.drawable.core_no_image_course)
+                    .placeholder(org.openedx.core.R.drawable.core_no_image_course)
                     .build(),
                 contentDescription = organization.name,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(6.dp)
             )
         }
         Text(
@@ -184,7 +194,7 @@ fun OrganizationCard(
             style = MaterialTheme.appTypography.titleSmall,
             color = MaterialTheme.appColors.textPrimary,
             textAlign = TextAlign.Center,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .padding(top = 6.dp)

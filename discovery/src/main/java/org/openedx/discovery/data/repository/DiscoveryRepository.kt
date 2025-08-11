@@ -8,7 +8,7 @@ import org.openedx.discovery.data.model.room.CourseEntity
 import org.openedx.discovery.data.storage.DiscoveryDao
 import org.openedx.discovery.domain.model.Course
 import org.openedx.discovery.domain.model.CourseList
-import org.openedx.discovery.domain.model.Organization
+import org.openedx.discovery.data.model.Organization
 
 class DiscoveryRepository(
     private val api: DiscoveryApi,

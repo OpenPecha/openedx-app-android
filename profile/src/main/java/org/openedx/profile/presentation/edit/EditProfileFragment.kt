@@ -608,7 +608,7 @@ private fun EditProfileScreen(
                                     R.string.profile_switch_to_limited
                                 }
                             ),
-                            color = MaterialTheme.appColors.textAccent,
+                            color = MaterialTheme.appColors.infoVariant,
                             style = MaterialTheme.appTypography.labelLarge
                         )
                         Spacer(modifier = Modifier.height(20.dp))
@@ -911,7 +911,7 @@ private fun SelectableField(
             unfocusedContainerColor = MaterialTheme.appColors.textFieldBackground,
             focusedContainerColor = MaterialTheme.appColors.textFieldBackground,
             unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
-            cursorColor = MaterialTheme.appColors.textFieldText,
+            cursorColor = MaterialTheme.appColors.primary,
             disabledBorderColor = MaterialTheme.appColors.textFieldBorder,
             disabledTextColor = MaterialTheme.appColors.textFieldHint,
             disabledPlaceholderColor = MaterialTheme.appColors.textFieldHint
@@ -994,8 +994,9 @@ private fun InputEditField(
                 unfocusedTextColor = MaterialTheme.appColors.textFieldText,
                 unfocusedContainerColor = MaterialTheme.appColors.textFieldBackground,
                 focusedContainerColor = MaterialTheme.appColors.textFieldBackground,
+                focusedBorderColor = MaterialTheme.appColors.textFieldBorder,
                 unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
-                cursorColor = MaterialTheme.appColors.textFieldText,
+                cursorColor = MaterialTheme.appColors.primary,
             ),
             shape = MaterialTheme.appShapes.textFieldShape,
             placeholder = {

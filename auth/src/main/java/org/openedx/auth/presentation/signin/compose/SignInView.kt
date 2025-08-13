@@ -470,7 +470,7 @@ private fun PasswordTextField(
             unfocusedContainerColor = MaterialTheme.appColors.textFieldBackground,
             focusedBorderColor = MaterialTheme.appColors.textFieldBorder,
             unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
-            cursorColor = MaterialTheme.appColors.textFieldText,
+            cursorColor = MaterialTheme.appColors.primary,
         ),
         shape = MaterialTheme.appShapes.textFieldShape,
         placeholder = {

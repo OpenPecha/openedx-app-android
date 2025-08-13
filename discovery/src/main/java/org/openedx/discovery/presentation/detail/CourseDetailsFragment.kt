@@ -491,7 +491,7 @@ private fun CourseDetailNativeContent(
                 modifier = Modifier.testTag("txt_course_org"),
                 text = course.org,
                 style = MaterialTheme.appTypography.labelMedium,
-                color = MaterialTheme.appColors.textAccent
+                color = MaterialTheme.appColors.primary
             )
             if (!(enrollmentEnd != null && Date() > enrollmentEnd)) {
                 Spacer(Modifier.height(32.dp))

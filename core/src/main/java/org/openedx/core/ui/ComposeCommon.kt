@@ -213,7 +213,7 @@ fun Toolbar(
             ) {
                 Icon(
                     imageVector = Icons.Default.ManageAccounts,
-                    tint = MaterialTheme.appColors.textAccent,
+                    tint = MaterialTheme.appColors.primary,
                     contentDescription = stringResource(id = R.string.core_accessibility_settings)
                 )
             }
@@ -817,6 +817,7 @@ fun OpenEdXOutlinedTextField(
                 onValueChanged(it.text)
             },
             colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = MaterialTheme.appColors.textFieldBorder,
                 unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
                 textColor = MaterialTheme.appColors.textFieldText,
                 backgroundColor = MaterialTheme.appColors.textFieldBackground,

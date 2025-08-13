@@ -185,7 +185,7 @@ private fun Title(
         ) {
             Icon(
                 imageVector = Icons.Default.ManageAccounts,
-                tint = MaterialTheme.appColors.textAccent,
+                tint = MaterialTheme.appColors.primary,
                 contentDescription = stringResource(id = CoreR.string.core_accessibility_settings)
             )
         }

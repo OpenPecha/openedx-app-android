@@ -162,6 +162,15 @@ private fun WebViewContent(
                             false
                         }
                     }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        val css = when {
+                            url?.contains("privacy", ignoreCase = true) == true -> PRIVACY_PAGE_CSS
+                            else -> return
+                        }
+                        injectCss(view, css)
+                    }
                 }
                 with(settings) {
                     javaScriptEnabled = true
@@ -203,4 +212,38 @@ private fun WebViewContent(
             }
         }
     )
+}
+
+private const val PRIVACY_PAGE_CSS = """
+    header, footer {
+        display: none !important;
+    }
+    body {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    .content-wrapper {
+        padding: 0 !important;
+        margin: 0;
+    }
+    .container.about {
+        padding: 0;
+    }
+    .privacy-container {
+        padding: 25px 20px !important;
+        margin: 0 !important;
+    }
+"""
+
+private fun injectCss(view: WebView?, css: String) {
+    val js = """
+        (function() {
+            var style = document.createElement('style');
+            style.type = 'text/css';
+            style.appendChild(document.createTextNode(`$css`));
+            document.head.appendChild(style);
+        })();
+    """.trimIndent()
+
+    view?.evaluateJavascript(js, null)
 }

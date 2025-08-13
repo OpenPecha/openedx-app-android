@@ -48,6 +48,8 @@ data class CourseDetails(
     val overview: String?,
     @SerializedName("is_enrolled")
     val isEnrolled: Boolean?,
+    @SerializedName("duration")
+    val duration: String?,
 ) {
 
     fun mapToDomain(): Course {
@@ -72,7 +74,8 @@ data class CourseDetails(
             pacing = pacing.orEmpty(),
             overview = overview.orEmpty(),
             isEnrolled = isEnrolled ?: false,
-            media = mapMediaToDomain()
+            media = mapMediaToDomain(),
+            duration = duration.orEmpty(),
         )
     }
 

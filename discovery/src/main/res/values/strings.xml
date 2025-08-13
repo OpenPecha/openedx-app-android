@@ -14,14 +14,20 @@
     <string name="discovery_enrolled_successfully">You have been successfully enrolled in this course.</string>
     <string name="discovery_you_are_already_enrolled">You are already enrolled in this course.</string>
     <string name="discovery_programs" tools:ignore="MissingTranslation">Programs</string>
+    <string name="filter_courses">Filter Courses</string>
+    <string name="schools_and_partners">Schools and Partners</string>
+    <string name="apply">Apply</string>
+    <string name="clear">Clear</string>
+    <string name="course_duration_specified">Course Duration: %1$s</string>
+    <string name="course_duration_unspecified">Course Duration: Not specified</string>
 
     <plurals name="discovery_found_courses">
-        <item quantity="zero">Found %s courses on your request</item>
         <item quantity="one">Found %s course on your request</item>
-        <item quantity="two">Found %s courses on your request</item>
-        <item quantity="few">Found %s courses on your request</item>
-        <item quantity="many">Found %s courses on your request</item>
         <item quantity="other">Found %s courses on your request</item>
+    </plurals>
+    <plurals name="discovery_filtered_found_courses">
+        <item quantity="one">Viewing %d course</item>
+        <item quantity="other">Viewing %d courses</item>
     </plurals>
 
     <!-- Accessibility -->

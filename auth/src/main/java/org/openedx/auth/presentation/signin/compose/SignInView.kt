@@ -4,8 +4,10 @@ import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,12 +17,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
@@ -40,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +54,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -57,15 +65,13 @@ import org.openedx.auth.R
 import org.openedx.auth.presentation.signin.AuthEvent
 import org.openedx.auth.presentation.signin.SignInUIState
 import org.openedx.auth.presentation.ui.LoginTextField
+import org.openedx.auth.presentation.ui.PasswordVisibilityIcon
 import org.openedx.auth.presentation.ui.SocialAuthView
-import org.openedx.core.UIMessage
 import org.openedx.core.extension.TextConverter
 import org.openedx.core.ui.BackBtn
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.HyperlinkText
 import org.openedx.core.ui.OpenEdXButton
-import org.openedx.core.ui.WindowSize
-import org.openedx.core.ui.WindowType
 import org.openedx.core.ui.displayCutoutForLandscape
 import org.openedx.core.ui.noRippleClickable
 import org.openedx.core.ui.theme.OpenEdXTheme
@@ -73,7 +79,10 @@ import org.openedx.core.ui.theme.appColors
 import org.openedx.core.ui.theme.appShapes
 import org.openedx.core.ui.theme.appTypography
 import org.openedx.core.ui.theme.compose.SignInLogoView
-import org.openedx.core.ui.windowSizeValue
+import org.openedx.foundation.presentation.UIMessage
+import org.openedx.foundation.presentation.WindowSize
+import org.openedx.foundation.presentation.WindowType
+import org.openedx.foundation.presentation.windowSizeValue
 import org.openedx.core.R as coreR
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -124,7 +133,7 @@ internal fun LoginScreen(
         Image(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.3f),
+                .fillMaxHeight(fraction = 0.3f),
             painter = painterResource(id = coreR.drawable.core_top_header),
             contentScale = ContentScale.FillBounds,
             contentDescription = null
@@ -195,7 +204,8 @@ internal fun LoginScreen(
                                 modifier = Modifier.testTag("txt_${state.agreement.name}"),
                                 fullText = linkedText.text,
                                 hyperLinks = linkedText.links,
-                                linkTextColor = MaterialTheme.appColors.primary,
+                                linkTextColor = MaterialTheme.appColors.textHyperLink,
+                                linkTextDecoration = TextDecoration.Underline,
                                 action = { link ->
                                     onEvent(AuthEvent.OpenLink(linkedText.links, link))
                                 },
@@ -216,57 +226,66 @@ private fun AuthForm(
 ) {
     var login by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var isEmailError by rememberSaveable { mutableStateOf(false) }
+    var isPasswordError by rememberSaveable { mutableStateOf(false) }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        LoginTextField(
-            modifier = Modifier
-                .fillMaxWidth(),
-            title = stringResource(id = R.string.auth_email_username),
-            description = stringResource(id = R.string.auth_enter_email_username),
-            onValueChanged = {
-                login = it
-            })
+        if (!state.isBrowserLoginEnabled) {
+            LoginTextField(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                title = stringResource(id = R.string.auth_email_username),
+                description = stringResource(id = R.string.auth_enter_email_username),
+                onValueChanged = {
+                    login = it
+                    isEmailError = false
+                },
+                isError = isEmailError,
+                errorMessages = stringResource(id = R.string.auth_error_empty_username_email)
+            )
 
-        Spacer(modifier = Modifier.height(18.dp))
-        PasswordTextField(
-            modifier = Modifier
-                .fillMaxWidth(),
-            onValueChanged = {
-                password = it
-            },
-            onPressDone = {
-                onEvent(AuthEvent.SignIn(login = login, password = password))
-            }
-        )
+            Spacer(modifier = Modifier.height(18.dp))
+            PasswordTextField(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                onValueChanged = {
+                    password = it
+                    isPasswordError = false
+                },
+                onPressDone = {
+                    keyboardController?.hide()
+                    if (password.isNotEmpty()) {
+                        onEvent(AuthEvent.SignIn(login = login, password = password))
+                    } else {
+                        isEmailError = login.isEmpty()
+                        isPasswordError = password.isEmpty()
+                    }
+                },
+                isError = isPasswordError,
+            )
+        } else {
+            Spacer(modifier = Modifier.height(40.dp))
+        }
 
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(top = 20.dp, bottom = 36.dp)
         ) {
-            if (state.isLogistrationEnabled.not()) {
+            if (!state.isBrowserLoginEnabled) {
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     modifier = Modifier
-                        .testTag("txt_register")
+                        .testTag("txt_forgot_password")
                         .noRippleClickable {
-                            onEvent(AuthEvent.RegisterClick)
+                            onEvent(AuthEvent.ForgotPasswordClick)
                         },
-                    text = stringResource(id = coreR.string.core_register),
-                    color = MaterialTheme.appColors.primary,
+                    text = stringResource(id = R.string.auth_forgot_password),
+                    color = MaterialTheme.appColors.infoVariant,
                     style = MaterialTheme.appTypography.labelLarge
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                modifier = Modifier
-                    .testTag("txt_forgot_password")
-                    .noRippleClickable {
-                        onEvent(AuthEvent.ForgotPasswordClick)
-                    },
-                text = stringResource(id = R.string.auth_forgot_password),
-                color = MaterialTheme.appColors.primary,
-                style = MaterialTheme.appTypography.labelLarge
-            )
         }
 
         if (state.showProgress) {
@@ -275,12 +294,28 @@ private fun AuthForm(
             OpenEdXButton(
                 modifier = buttonWidth.testTag("btn_sign_in"),
                 text = stringResource(id = coreR.string.core_sign_in),
+                textColor = MaterialTheme.appColors.primaryButtonText,
+                backgroundColor = MaterialTheme.appColors.secondaryButtonBackground,
                 onClick = {
-                    onEvent(AuthEvent.SignIn(login = login, password = password))
+                    if (state.isBrowserLoginEnabled) {
+                        onEvent(AuthEvent.SignInBrowser)
+                    } else {
+                        keyboardController?.hide()
+                        if (login.isNotEmpty() && password.isNotEmpty()) {
+                            onEvent(AuthEvent.SignIn(login = login, password = password))
+                        } else {
+                            isEmailError = login.isEmpty()
+                            isPasswordError = password.isEmpty()
+                        }
+                    }
                 }
             )
         }
         if (state.isSocialAuthEnabled) {
+            OrDivider(text=stringResource(
+                id = R.string.auth_normal_or_sso),
+                padding = PaddingValues(top = 24.dp, bottom = 24.dp)
+            )
             SocialAuthView(
                 modifier = buttonWidth,
                 isGoogleAuthEnabled = state.isGoogleAuthEnabled,
@@ -288,7 +323,37 @@ private fun AuthForm(
                 isMicrosoftAuthEnabled = state.isMicrosoftAuthEnabled,
                 isSignIn = true,
             ) {
+                keyboardController?.hide()
                 onEvent(AuthEvent.SocialSignIn(it))
+            }
+        }
+        if (!state.isBrowserLoginEnabled &&
+            state.isLogistrationEnabled.not() &&
+            state.isRegistrationEnabled
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp, bottom = 36.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(id = R.string.auth_dont_have_account),
+                    style = MaterialTheme.appTypography.labelLarge,
+                    color = MaterialTheme.appColors.textPrimary
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(id = coreR.string.core_register),
+                    modifier = Modifier
+                        .testTag("txt_register")
+                        .noRippleClickable {
+                            onEvent(AuthEvent.RegisterClick)
+                        },
+                    style = MaterialTheme.appTypography.labelLarge,
+                    color = MaterialTheme.appColors.infoVariant
+                )
             }
         }
     }
@@ -297,15 +362,16 @@ private fun AuthForm(
 @Composable
 private fun PasswordTextField(
     modifier: Modifier = Modifier,
+    isError: Boolean,
     onValueChanged: (String) -> Unit,
     onPressDone: () -> Unit,
 ) {
     var passwordTextFieldValue by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(
-            TextFieldValue("")
-        )
+        mutableStateOf(TextFieldValue(""))
     }
+    var isPasswordVisible by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+
     Text(
         modifier = Modifier
             .testTag("txt_password_label")
@@ -314,7 +380,9 @@ private fun PasswordTextField(
         color = MaterialTheme.appColors.textPrimary,
         style = MaterialTheme.appTypography.labelLarge
     )
+
     Spacer(modifier = Modifier.height(8.dp))
+
     OutlinedTextField(
         modifier = modifier.testTag("tf_password"),
         value = passwordTextFieldValue,
@@ -323,8 +391,11 @@ private fun PasswordTextField(
             onValueChanged(it.text.trim())
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(
+            textColor = MaterialTheme.appColors.textFieldText,
+            backgroundColor = MaterialTheme.appColors.textFieldBackground,
+            focusedBorderColor = MaterialTheme.appColors.textFieldBorder,
             unfocusedBorderColor = MaterialTheme.appColors.textFieldBorder,
-            backgroundColor = MaterialTheme.appColors.textFieldBackground
+            cursorColor = MaterialTheme.appColors.primary,
         ),
         shape = MaterialTheme.appShapes.textFieldShape,
         placeholder = {
@@ -335,18 +406,40 @@ private fun PasswordTextField(
                 style = MaterialTheme.appTypography.bodyMedium
             )
         },
+        trailingIcon = {
+            PasswordVisibilityIcon(
+                isPasswordVisible = isPasswordVisible,
+                onClick = { isPasswordVisible = !isPasswordVisible }
+            )
+        },
         keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = KeyboardType.Password,
             imeAction = ImeAction.Done
         ),
-        visualTransformation = PasswordVisualTransformation(),
+        visualTransformation = if (isPasswordVisible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        },
         keyboardActions = KeyboardActions {
             focusManager.clearFocus()
             onPressDone()
         },
+        isError = isError,
         textStyle = MaterialTheme.appTypography.bodyMedium,
-        singleLine = true
+        singleLine = true,
     )
+    if (isError) {
+        Text(
+            modifier = Modifier
+                .testTag("txt_password_error")
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            text = stringResource(id = R.string.auth_error_empty_password),
+            style = MaterialTheme.appTypography.bodySmall,
+            color = MaterialTheme.appColors.error,
+        )
+    }
 }
 
 @Preview(uiMode = UI_MODE_NIGHT_NO)
@@ -359,6 +452,24 @@ private fun SignInScreenPreview() {
         LoginScreen(
             windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
             state = SignInUIState(),
+            uiMessage = null,
+            onEvent = {},
+        )
+    }
+}
+
+@Preview(uiMode = UI_MODE_NIGHT_NO)
+@Preview(uiMode = UI_MODE_NIGHT_YES)
+@Preview(name = "NEXUS_5_Light", device = Devices.NEXUS_5, uiMode = UI_MODE_NIGHT_NO)
+@Preview(name = "NEXUS_5_Dark", device = Devices.NEXUS_5, uiMode = UI_MODE_NIGHT_YES)
+@Composable
+private fun SignInUsingBrowserScreenPreview() {
+    OpenEdXTheme {
+        LoginScreen(
+            windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
+            state = SignInUIState().copy(
+                isBrowserLoginEnabled = true,
+            ),
             uiMessage = null,
             onEvent = {},
         )
@@ -380,6 +491,43 @@ private fun SignInScreenTabletPreview() {
             ),
             uiMessage = null,
             onEvent = {},
+        )
+    }
+}
+
+@Composable
+fun OrDivider(
+    modifier: Modifier = Modifier,
+    text: String,
+    lineColor: Color = MaterialTheme.appColors.textPrimary,
+    textStyle: TextStyle = MaterialTheme.appTypography.labelLarge,
+    textColor: Color = MaterialTheme.appColors.textPrimary,
+    lineThickness: Dp = 0.8.dp,
+    padding: PaddingValues = PaddingValues(top = 24.dp)
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(padding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Divider(
+            modifier = Modifier
+                .weight(1f)
+                .height(lineThickness),
+            color = lineColor
+        )
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp),
+            style = textStyle,
+            color = textColor
+        )
+        Divider(
+            modifier = Modifier
+                .weight(1f)
+                .height(lineThickness),
+            color = lineColor
         )
     }
 }

@@ -25,21 +25,19 @@ DISCOVERY:
 PROGRAM:
   TYPE: 'native'
   WEBVIEW:
-    PROGRAM_URL: ''
-    PROGRAM_DETAIL_URL_TEMPLATE: ''
+    BASE_URL: ''
+    PROGRAM_DETAIL_TEMPLATE: ''
+
+DASHBOARD:
+  TYPE: 'gallery'
 
 FIREBASE:
   ENABLED: false
-  ANALYTICS_SOURCE: '' # segment | none
   CLOUD_MESSAGING_ENABLED: false
   PROJECT_NUMBER: ''
   PROJECT_ID: ''
   APPLICATION_ID: '' #App ID field from the Firebase console or mobilesdk_app_id from the google-services.json file.
   API_KEY: ''
-
-SEGMENT_IO:
-  ENABLED: false
-  SEGMENT_IO_WRITE_KEY: ''
 
 BRAZE:
   ENABLED: false
@@ -77,6 +75,16 @@ TOKEN_TYPE: "JWT"
 WHATS_NEW_ENABLED: false
 #feature flag enable Social Login buttons
 SOCIAL_AUTH_ENABLED: false
+#Enables the pre login courses discovery experience
+PRE_LOGIN_EXPERIENCE_ENABLED: false
+#feature flag to enable registration from app
+REGISTRATION_ENABLED: true
+#feature flag to do the authentication flow in the browser to log in
+BROWSER_LOGIN: false
+#feature flag to do the registration for in the browser
+BROWSER_REGISTRATION: false
 #Course navigation feature flags
-COURSE_NESTED_LIST_ENABLED: false
-COURSE_UNIT_PROGRESS_ENABLED: false
+UI_COMPONENTS:
+  COURSE_DROPDOWN_NAVIGATION_ENABLED: false
+  COURSE_UNIT_PROGRESS_ENABLED: false
+  COURSE_DOWNLOAD_QUEUE_SCREEN: false

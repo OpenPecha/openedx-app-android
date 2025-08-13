@@ -6,7 +6,6 @@ import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
@@ -37,10 +35,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import org.openedx.core.extension.isEmailValid
-import org.openedx.core.extension.replaceLinkTags
 import org.openedx.core.ui.theme.appColors
 import org.openedx.core.utils.EmailUtil
+import org.openedx.foundation.extension.applyDarkModeIfEnabled
+import org.openedx.foundation.extension.isEmailValid
+import org.openedx.foundation.extension.replaceLinkTags
+import org.openedx.foundation.presentation.WindowSize
+import org.openedx.foundation.presentation.windowSizeValue
 import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -64,7 +65,6 @@ fun WebContentScreen(
         scaffoldState = scaffoldState,
         backgroundColor = MaterialTheme.appColors.background
     ) {
-
         val screenWidth by remember(key1 = windowSize) {
             mutableStateOf(
                 windowSize.windowSizeValue(
@@ -100,15 +100,7 @@ fun WebContentScreen(
                     color = MaterialTheme.appColors.background
                 ) {
                     if (htmlBody.isNullOrEmpty() && contentUrl.isNullOrEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.appColors.background)
-                                .zIndex(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = MaterialTheme.appColors.primary)
-                        }
+                        CircularProgress()
                     } else {
                         var webViewAlpha by rememberSaveable { mutableFloatStateOf(0f) }
                         Surface(
@@ -121,7 +113,8 @@ fun WebContentScreen(
                                 contentUrl = contentUrl,
                                 onWebPageLoaded = {
                                     webViewAlpha = 1f
-                                })
+                                }
+                            )
                         }
                     }
                 }
@@ -154,10 +147,7 @@ private fun WebViewContent(
                         request: WebResourceRequest?
                     ): Boolean {
                         val clickUrl = request?.url?.toString() ?: ""
-                        return if (clickUrl.isNotEmpty() &&
-                            (clickUrl.startsWith("http://") ||
-                                    clickUrl.startsWith("https://"))
-                        ) {
+                        return if (clickUrl.isNotEmpty() && clickUrl.startsWith("http")) {
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl)))
                             true
                         } else if (clickUrl.startsWith("mailto:")) {
@@ -171,6 +161,15 @@ private fun WebViewContent(
                         } else {
                             false
                         }
+                    }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        val css = when {
+                            url?.contains("privacy", ignoreCase = true) == true -> PRIVACY_PAGE_CSS
+                            else -> return
+                        }
+                        injectCss(view, css)
                     }
                 }
                 with(settings) {
@@ -195,6 +194,7 @@ private fun WebViewContent(
                 contentUrl?.let {
                     loadUrl(it)
                 }
+                applyDarkModeIfEnabled(isDarkTheme)
             }
         },
         update = { webView ->
@@ -212,4 +212,38 @@ private fun WebViewContent(
             }
         }
     )
+}
+
+private const val PRIVACY_PAGE_CSS = """
+    header, footer {
+        display: none !important;
+    }
+    body {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    .content-wrapper {
+        padding: 0 !important;
+        margin: 0;
+    }
+    .container.about {
+        padding: 0;
+    }
+    .privacy-container {
+        padding: 25px 20px !important;
+        margin: 0 !important;
+    }
+"""
+
+private fun injectCss(view: WebView?, css: String) {
+    val js = """
+        (function() {
+            var style = document.createElement('style');
+            style.type = 'text/css';
+            style.appendChild(document.createTextNode(`$css`));
+            document.head.appendChild(style);
+        })();
+    """.trimIndent()
+
+    view?.evaluateJavascript(js, null)
 }

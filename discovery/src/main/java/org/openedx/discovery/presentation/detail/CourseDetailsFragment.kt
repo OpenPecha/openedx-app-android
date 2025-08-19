@@ -158,12 +158,10 @@ class CourseDetailsFragment : Fragment() {
                         if (currentState is CourseDetailsUIState.CourseData) {
                             when {
                                 (!currentState.isUserLoggedIn) -> {
-                                    val dialog = AuthorizationDialogFragment.newInstance(
-                                        viewModel.courseId
-                                    )
-                                    dialog.show(
-                                        requireActivity().supportFragmentManager,
-                                        AuthorizationDialogFragment::class.simpleName
+                                    router.navigateToSignIn(
+                                        parentFragmentManager,
+                                        currentState.course.courseId,
+                                        null
                                     )
                                 }
 

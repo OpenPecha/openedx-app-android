@@ -401,9 +401,7 @@ private fun AuthForm(
             }
         }
     }
-    if (state.isLogistrationEnabled.not() &&
-        state.isRegistrationEnabled
-    ) {
+    if (state.isRegistrationEnabled) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

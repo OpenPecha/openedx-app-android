@@ -155,9 +155,10 @@ class CourseDetailsFragment : Fragment() {
                         if (currentState is CourseDetailsUIState.CourseData) {
                             when {
                                 (!currentState.isUserLoggedIn) -> {
-                                    router.navigateToLogistration(
+                                    router.navigateToSignIn(
                                         parentFragmentManager,
-                                        currentState.course.courseId
+                                        currentState.course.courseId,
+                                        null
                                     )
                                 }
 

@@ -1292,9 +1292,9 @@ fun AuthButtonsPanel(
                 ),
             text = stringResource(id = R.string.core_sign_in),
             onClick = { onSignInClick() },
-            textColor = MaterialTheme.appColors.secondaryButtonBorderedText,
+            textColor = MaterialTheme.appColors.primary,
             backgroundColor = MaterialTheme.appColors.secondaryButtonBorderedBackground,
-            borderColor = MaterialTheme.appColors.secondaryButtonBorder,
+            borderColor = MaterialTheme.appColors.primary,
         )
     }
 }

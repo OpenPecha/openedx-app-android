@@ -328,7 +328,6 @@ private fun AuthForm(
             }
         }
         if (!state.isBrowserLoginEnabled &&
-            state.isLogistrationEnabled.not() &&
             state.isRegistrationEnabled
         ) {
             Row(

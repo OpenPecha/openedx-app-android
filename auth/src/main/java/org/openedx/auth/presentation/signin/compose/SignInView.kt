@@ -25,7 +25,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -52,7 +51,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -68,6 +66,7 @@ import org.openedx.auth.R
 import org.openedx.auth.presentation.signin.AuthEvent
 import org.openedx.auth.presentation.signin.SignInUIState
 import org.openedx.auth.presentation.ui.LoginTextField
+import org.openedx.auth.presentation.ui.OrDivider
 import org.openedx.auth.presentation.ui.PasswordVisibilityIcon
 import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.extension.TextConverter
@@ -554,41 +553,6 @@ private fun SignInScreenTabletPreview() {
                 ),
             uiMessage = null,
             onEvent = {},
-        )
-    }
-}
-
-@Composable
-internal fun OrDivider(
-    modifier: Modifier = Modifier,
-    text: String,
-    lineColor: Color = MaterialTheme.appColors.textPrimary,
-    textStyle: TextStyle = MaterialTheme.appTypography.labelLarge,
-    textColor: Color = MaterialTheme.appColors.textPrimary,
-    lineThickness: Dp = 0.8.dp,
-    padding: PaddingValues = PaddingValues(top = 24.dp)
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(padding),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = lineColor,
-            thickness = lineThickness
-        )
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp),
-            style = textStyle,
-            color = textColor
-        )
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = lineColor,
-            thickness = lineThickness
         )
     }
 }

@@ -5,6 +5,10 @@
     <string name="core_error_invalid_grant">Invalid credentials</string>
     <string name="core_error_no_connection">Slow or no internet connection</string>
     <string name="core_error_unknown_error">Something went wrong</string>
+    <string name="core_error_no_linked_account_error">
+        This %1$s account is not linked with any %2$s account. Please register.
+    </string>
+    <string name="core_sign_in_canceled">The user canceled the sign-in flow.</string>
     <string name="core_error_try_again">Try again</string>
     <string name="core_privacy_policy">Privacy Policy</string>
     <string name="core_cookie_policy" translatable="false">Cookie policy</string>

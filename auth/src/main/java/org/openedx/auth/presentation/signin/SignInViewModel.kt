@@ -217,7 +217,11 @@ class SignInViewModel(
             interactor.loginSocial(token, authType)
         }.onFailure { error ->
             logger.e { "Social login error: $error" }
-            onUnknownError()
+            if (error is EdxError.InvalidGrantException) {
+                onInvalidGrantError(authType)
+            } else {
+                onUnknownError()
+            }
         }.onSuccess {
             logger.d { "Social login (${authType.methodName}) success" }
             _uiState.update { it.copy(loginSuccess = true) }
@@ -225,6 +229,32 @@ class SignInViewModel(
             _uiState.update { it.copy(showProgress = false) }
             appNotifier.send(SignInEvent())
         }
+    }
+
+    private fun onInvalidGrantError(authType: AuthType? = null, message: (() -> String)? = null) {
+        message?.let {
+            logger.e { it() }
+        }
+        val providerName = authType?.methodName ?: "Social"
+        val platformName = resourceManager.getString(CoreRes.string.app_name)
+
+        _uiMessage.value = UIMessage.SnackBarMessage(
+            resourceManager.getString(
+                CoreRes.string.core_error_no_linked_account_error,
+                providerName,
+                platformName
+            )
+        )
+        _uiState.update { it.copy(showProgress = false) }
+    }
+
+    private fun onSignInCancelled() {
+        _uiMessage.value = UIMessage.SnackBarMessage(
+            resourceManager.getString(
+                CoreRes.string.core_sign_in_canceled
+            )
+        )
+        _uiState.update { it.copy(showProgress = false) }
     }
 
     private fun onUnknownError(message: (() -> String)? = null) {
@@ -252,7 +282,7 @@ class SignInViewModel(
             } else {
                 _uiState.update { it.copy(showProgress = false) }
             }
-        } ?: onUnknownError()
+        }  ?: onSignInCancelled()
     }
 
     fun openLink(fragmentManager: FragmentManager, links: Map<String, String>, link: String) {

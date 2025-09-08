@@ -25,7 +25,6 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
@@ -72,6 +71,7 @@ import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.domain.model.RegistrationField
 import org.openedx.core.domain.model.RegistrationFieldType
 import org.openedx.core.ui.BackBtn
+import org.openedx.core.ui.CustomScaffold
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.OpenEdXButton
 import org.openedx.core.ui.SheetContent
@@ -165,7 +165,7 @@ internal fun SignUpView(
         }
     }
 
-    Scaffold(
+    CustomScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier
             .semantics {

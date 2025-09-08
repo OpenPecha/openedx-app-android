@@ -26,7 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
@@ -68,6 +67,7 @@ import org.openedx.auth.presentation.ui.PasswordVisibilityIcon
 import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.extension.TextConverter
 import org.openedx.core.ui.BackBtn
+import org.openedx.core.ui.CustomScaffold
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.HyperlinkText
 import org.openedx.core.ui.OpenEdXButton
@@ -95,7 +95,7 @@ internal fun LoginScreen(
     val scaffoldState = rememberScaffoldState()
     val scrollState = rememberScrollState()
 
-    Scaffold(
+    CustomScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier
             .semantics {

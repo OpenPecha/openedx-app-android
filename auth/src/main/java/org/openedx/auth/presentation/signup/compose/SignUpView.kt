@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,8 +25,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -74,6 +71,7 @@ import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.domain.model.RegistrationField
 import org.openedx.core.domain.model.RegistrationFieldType
 import org.openedx.core.ui.BackBtn
+import org.openedx.core.ui.CustomScaffold
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.OpenEdXButton
 import org.openedx.core.ui.SheetContent
@@ -161,16 +159,14 @@ internal fun SignUpView(
         }
     }
 
-    Scaffold(
+    CustomScaffold(
+        snackbarHostState = snackbarHostState,
         modifier = Modifier
             .semantics {
                 testTagsAsResourceId = true
             }
             .fillMaxSize()
-            .navigationBarsPadding(),
-        containerColor = MaterialTheme.appColors.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        contentWindowInsets = WindowInsets()
+            .navigationBarsPadding()
     ) {
         val topBarPadding by remember {
             mutableStateOf(

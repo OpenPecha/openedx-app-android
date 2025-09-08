@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,6 +55,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -1347,6 +1351,31 @@ fun OpenEdXDropdownMenuItem(
         text = text,
         style = MaterialTheme.appTypography.labelLarge,
         color = MaterialTheme.appColors.textDark,
+    )
+}
+
+@Composable
+fun CustomScaffold(
+    snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.appColors.background,
+    contentWindowInsets: WindowInsets = WindowInsets(),
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        modifier = modifier,
+        containerColor = containerColor,
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = MaterialTheme.appColors.error,
+                    contentColor = Color.White,
+                )
+            }
+        },
+        contentWindowInsets = contentWindowInsets,
+        content = content
     )
 }
 

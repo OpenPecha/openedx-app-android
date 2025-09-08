@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,8 +27,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -71,6 +68,7 @@ import org.openedx.auth.presentation.ui.PasswordVisibilityIcon
 import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.extension.TextConverter
 import org.openedx.core.ui.BackBtn
+import org.openedx.core.ui.CustomScaffold
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.HorizontalLine
 import org.openedx.core.ui.HyperlinkText
@@ -100,16 +98,14 @@ internal fun LoginScreen(
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    Scaffold(
+    CustomScaffold(
+        snackbarHostState = snackbarHostState,
         modifier = Modifier
             .semantics {
                 testTagsAsResourceId = true
             }
             .fillMaxSize()
-            .navigationBarsPadding(),
-        containerColor = MaterialTheme.appColors.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        contentWindowInsets = WindowInsets()
+            .navigationBarsPadding()
     ) {
         val contentPaddings by remember {
             mutableStateOf(

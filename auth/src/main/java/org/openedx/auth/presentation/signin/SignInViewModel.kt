@@ -34,6 +34,7 @@ import org.openedx.core.system.notifier.app.AppUpgradeEvent
 import org.openedx.core.system.notifier.app.SignInEvent
 import org.openedx.core.utils.Logger
 import org.openedx.foundation.presentation.BaseViewModel
+import org.openedx.foundation.presentation.UIMessage
 import org.openedx.foundation.system.ResourceManager
 import org.openedx.core.R as CoreRes
 
@@ -238,22 +239,30 @@ class SignInViewModel(
         val providerName = authType?.methodName ?: "Social"
         val platformName = resourceManager.getString(CoreRes.string.app_name)
 
-        _uiMessage.value = UIMessage.SnackBarMessage(
-            resourceManager.getString(
-                CoreRes.string.core_error_no_linked_account_error,
-                providerName,
-                platformName
+        viewModelScope.launch {
+            sendMessage(
+                UIMessage.SnackBarMessage(
+                    resourceManager.getString(
+                        CoreRes.string.core_error_no_linked_account_error,
+                        providerName,
+                        platformName
+                    )
+                )
             )
-        )
+        }
         _uiState.update { it.copy(showProgress = false) }
     }
 
     private fun onSignInCancelled() {
-        _uiMessage.value = UIMessage.SnackBarMessage(
-            resourceManager.getString(
-                CoreRes.string.core_sign_in_canceled
+        viewModelScope.launch {
+            sendMessage(
+                UIMessage.SnackBarMessage(
+                    resourceManager.getString(
+                        CoreRes.string.core_sign_in_canceled
+                    )
+                )
             )
-        )
+        }
         _uiState.update { it.copy(showProgress = false) }
     }
 

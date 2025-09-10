@@ -49,6 +49,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.ScaffoldState
+import androidx.compose.material.Snackbar
+import androidx.compose.material.SnackbarHost
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
@@ -1403,6 +1405,30 @@ private fun RoundTab(
             color = contentColor
         )
     }
+}
+
+@Composable
+fun CustomScaffold(
+    scaffoldState: ScaffoldState,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.appColors.background,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    androidx.compose.material.Scaffold(
+        modifier = modifier.fillMaxSize(),
+        scaffoldState = scaffoldState,
+        backgroundColor = backgroundColor,
+        snackbarHost = { hostState ->
+            SnackbarHost(hostState = hostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    backgroundColor = MaterialTheme.appColors.error,
+                    contentColor = Color.White,
+                )
+            }
+        },
+        content = content
+    )
 }
 
 @Preview

@@ -24,10 +24,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
@@ -56,7 +54,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -65,10 +62,12 @@ import org.openedx.auth.R
 import org.openedx.auth.presentation.signin.AuthEvent
 import org.openedx.auth.presentation.signin.SignInUIState
 import org.openedx.auth.presentation.ui.LoginTextField
+import org.openedx.auth.presentation.ui.OrDivider
 import org.openedx.auth.presentation.ui.PasswordVisibilityIcon
 import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.extension.TextConverter
 import org.openedx.core.ui.BackBtn
+import org.openedx.core.ui.CustomScaffold
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.HyperlinkText
 import org.openedx.core.ui.OpenEdXButton
@@ -96,7 +95,7 @@ internal fun LoginScreen(
     val scaffoldState = rememberScaffoldState()
     val scrollState = rememberScrollState()
 
-    Scaffold(
+    CustomScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier
             .semantics {
@@ -490,43 +489,6 @@ private fun SignInScreenTabletPreview() {
             ),
             uiMessage = null,
             onEvent = {},
-        )
-    }
-}
-
-@Composable
-fun OrDivider(
-    modifier: Modifier = Modifier,
-    text: String,
-    lineColor: Color = MaterialTheme.appColors.textPrimary,
-    textStyle: TextStyle = MaterialTheme.appTypography.labelLarge,
-    textColor: Color = MaterialTheme.appColors.textPrimary,
-    lineThickness: Dp = 0.8.dp,
-    padding: PaddingValues = PaddingValues(top = 24.dp)
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(padding),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Divider(
-            modifier = Modifier
-                .weight(1f)
-                .height(lineThickness),
-            color = lineColor
-        )
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp),
-            style = textStyle,
-            color = textColor
-        )
-        Divider(
-            modifier = Modifier
-                .weight(1f)
-                .height(lineThickness),
-            color = lineColor
         )
     }
 }

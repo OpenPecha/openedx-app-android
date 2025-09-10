@@ -25,7 +25,6 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
@@ -63,15 +62,16 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.openedx.auth.R
 import org.openedx.auth.data.model.AuthType
-import org.openedx.auth.presentation.signin.compose.OrDivider
 import org.openedx.auth.presentation.signup.SignUpUIState
 import org.openedx.auth.presentation.ui.ExpandableText
 import org.openedx.auth.presentation.ui.OptionalFields
+import org.openedx.auth.presentation.ui.OrDivider
 import org.openedx.auth.presentation.ui.RequiredFields
 import org.openedx.auth.presentation.ui.SocialAuthView
 import org.openedx.core.domain.model.RegistrationField
 import org.openedx.core.domain.model.RegistrationFieldType
 import org.openedx.core.ui.BackBtn
+import org.openedx.core.ui.CustomScaffold
 import org.openedx.core.ui.HandleUIMessage
 import org.openedx.core.ui.OpenEdXButton
 import org.openedx.core.ui.SheetContent
@@ -165,7 +165,7 @@ internal fun SignUpView(
         }
     }
 
-    Scaffold(
+    CustomScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier
             .semantics {
@@ -348,6 +348,22 @@ internal fun SignUpView(
                                         )
                                     }
                                 }
+                                if (uiState.isSocialAuthEnabled && uiState.socialAuth == null) {
+                                    SocialAuthView(
+                                        modifier = buttonWidth,
+                                        isGoogleAuthEnabled = uiState.isGoogleAuthEnabled,
+                                        isFacebookAuthEnabled = uiState.isFacebookAuthEnabled,
+                                        isMicrosoftAuthEnabled = uiState.isMicrosoftAuthEnabled,
+                                        isSignIn = false,
+                                    ) {
+                                        keyboardController?.hide()
+                                        onRegisterClick(it)
+                                    }
+                                    OrDivider(text=stringResource(
+                                        id = R.string.auth_normal_or_sso),
+                                        padding = PaddingValues(top = 0.dp)
+                                    )
+                                }
                                 RequiredFields(
                                     fields = uiState.requiredFields,
                                     showErrorMap = showErrorMap,
@@ -447,22 +463,6 @@ internal fun SignUpView(
                                             onRegisterClick(AuthType.PASSWORD)
                                         }
                                     )
-                                }
-                                if (uiState.isSocialAuthEnabled && uiState.socialAuth == null) {
-                                    OrDivider(text=stringResource(
-                                        id = R.string.auth_normal_or_sso),
-                                        padding = PaddingValues(top = 0.dp)
-                                    )
-                                    SocialAuthView(
-                                        modifier = buttonWidth,
-                                        isGoogleAuthEnabled = uiState.isGoogleAuthEnabled,
-                                        isFacebookAuthEnabled = uiState.isFacebookAuthEnabled,
-                                        isMicrosoftAuthEnabled = uiState.isMicrosoftAuthEnabled,
-                                        isSignIn = false,
-                                    ) {
-                                        keyboardController?.hide()
-                                        onRegisterClick(it)
-                                    }
                                 }
                                 Spacer(Modifier.height(70.dp))
                             }

@@ -23,15 +23,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -143,15 +143,6 @@ fun DiscoveryCourseItem(
     windowSize: WindowSize,
     onClick: (String) -> Unit,
 ) {
-    val imageWidth by remember(key1 = windowSize) {
-        mutableStateOf(
-            windowSize.windowSizeValue(
-                expanded = 170.dp,
-                compact = 105.dp
-            )
-        )
-    }
-
     // Workaround: Tibetan script line wrapping issue in Jetpack Compose.
     // Adding a trailing newline forces proper height calculation and prevents clipping.
     val adjustedCourseTitle = course.name + "\n"
@@ -162,20 +153,22 @@ fun DiscoveryCourseItem(
         stringResource(id = R.string.discovery_course_duration_specified, course.duration)
     }
 
+    val lineHeight = 22.dp
+
     Surface(
         modifier = Modifier
             .testTag("btn_course_card")
             .fillMaxWidth()
-            .height(140.dp)
-            .clickable { onClick(course.courseId) }
-            .background(MaterialTheme.appColors.background),
+            .height(230.dp)
+            .clickable { onClick(course.courseId) },
+        shape = MaterialTheme.appShapes.cardShape,
+        shadowElevation = 4.dp,
+        color = MaterialTheme.appColors.surface
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.appColors.background),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -186,39 +179,41 @@ fun DiscoveryCourseItem(
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(imageWidth)
+                    .fillMaxWidth()
                     .height(105.dp)
                     .clip(MaterialTheme.appShapes.courseImageShape)
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(105.dp),
+                    .padding(10.dp)
             ) {
                 Text(
-                    modifier = Modifier
-                        .testTag("txt_course_org")
-                        .padding(top = 12.dp),
+                    modifier = Modifier.testTag("txt_course_org"),
                     text = course.org,
                     color = MaterialTheme.appColors.textFieldHint,
-                    style = MaterialTheme.appTypography.labelMedium
+                    style = MaterialTheme.appTypography.labelMedium,
+                    maxLines = 1,
+                    softWrap = true,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     modifier = Modifier
                         .testTag("txt_course_title")
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = 4.dp)
+                        .height(lineHeight * 3),
                     text = adjustedCourseTitle,
                     color = MaterialTheme.appColors.textPrimary,
                     style = MaterialTheme.appTypography.titleSmall,
-                    maxLines = 2,
+                    maxLines = 3,
                     softWrap = true,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp)
+                        .padding(top = 4.dp)
                         .testTag("txt_course_duration"),
                     text = durationText,
                     color = MaterialTheme.appColors.textFieldHint,
@@ -320,7 +315,7 @@ internal fun DiscoveryScreen(
     selectedOrganization: Organization?,
     onOrganizationSelected: (Organization?) -> Unit,
 ) {
-    val scrollState = rememberLazyListState()
+    val scrollState = rememberLazyGridState()
     val firstVisibleIndex = remember {
         mutableIntStateOf(scrollState.firstVisibleItemIndex)
     }
@@ -552,14 +547,17 @@ internal fun DiscoveryScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                LazyColumn(
-                                    Modifier
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    modifier = Modifier
                                         .fillMaxHeight()
                                         .then(contentWidth),
                                     contentPadding = contentPaddings,
-                                    state = scrollState
+                                    state = scrollState,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    item {
+                                    item(span = { GridItemSpan(2) }) {
                                         Column {
                                             if (selectedOrganization != null) {
                                                 Text(
@@ -569,7 +567,7 @@ internal fun DiscoveryScreen(
                                                         state.numCourses
                                                     ),
                                                     color = MaterialTheme.appColors.textPrimary,
-                                                    style = MaterialTheme.appTypography.titleMedium
+                                                    style = MaterialTheme.appTypography.titleLarge
                                                 )
                                             } else {
                                                 Text(
@@ -590,18 +588,19 @@ internal fun DiscoveryScreen(
                                             Spacer(modifier = Modifier.height(14.dp))
                                         }
                                     }
-                                    items(state.courses) { course ->
+                                    items(
+                                        count = state.courses.size,
+                                        key = { index -> "${state.courses[index].courseId}_$index" }
+                                    ) { index ->
+                                        val course = state.courses[index]
                                         DiscoveryCourseItem(
                                             apiHostUrl = apiHostUrl,
                                             course = course,
                                             windowSize = windowSize,
-                                            onClick = {
-                                                onItemClick(course)
-                                            }
+                                            onClick = { onItemClick(course) }
                                         )
-                                        HorizontalDivider()
                                     }
-                                    item {
+                                    item(span = { GridItemSpan(2) }) {
                                         if (canLoadMore) {
                                             Box(
                                                 modifier = Modifier

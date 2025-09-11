@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,6 +61,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -153,13 +155,13 @@ fun DiscoveryCourseItem(
         stringResource(id = R.string.discovery_course_duration_specified, course.duration)
     }
 
-    val lineHeight = 22.dp
+    val lineHeightSp = MaterialTheme.appTypography.titleSmall.lineHeight
+    val lineHeight = with(LocalDensity.current) { lineHeightSp.toDp() + 5.dp }
 
     Surface(
         modifier = Modifier
             .testTag("btn_course_card")
             .fillMaxWidth()
-            .height(230.dp)
             .clickable { onClick(course.courseId) },
         shape = MaterialTheme.appShapes.cardShape,
         shadowElevation = 4.dp,
@@ -180,7 +182,7 @@ fun DiscoveryCourseItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(105.dp)
+                    .aspectRatio(16f / 9f) // image scales with width
                     .clip(MaterialTheme.appShapes.courseImageShape)
             )
             Column(
@@ -406,6 +408,12 @@ internal fun DiscoveryScreen(
             )
         }
 
+        val columns = if (windowSize.width == WindowType.Compact) {
+            GridCells.Fixed(2)
+        } else {
+            GridCells.Fixed(3)
+        }
+
         HandleUIMessage(uiMessage = uiMessage, snackbarHostState = snackbarHostState)
 
         if (canShowBackButton) {
@@ -548,7 +556,7 @@ internal fun DiscoveryScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 LazyVerticalGrid(
-                                    columns = GridCells.Fixed(2),
+                                    columns = columns,
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .then(contentWidth),
@@ -557,7 +565,7 @@ internal fun DiscoveryScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    item(span = { GridItemSpan(2) }) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
                                         Column {
                                             if (selectedOrganization != null) {
                                                 Text(
@@ -600,7 +608,7 @@ internal fun DiscoveryScreen(
                                             onClick = { onItemClick(course) }
                                         )
                                     }
-                                    item(span = { GridItemSpan(2) }) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
                                         if (canLoadMore) {
                                             Box(
                                                 modifier = Modifier

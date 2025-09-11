@@ -157,9 +157,9 @@ fun DiscoveryCourseItem(
     val adjustedCourseTitle = course.name + "\n"
 
     val durationText = if (course.duration.isBlank()) {
-        stringResource(id = R.string.course_duration_unspecified)
+        stringResource(id = R.string.discovery_course_duration_unspecified)
     } else {
-        stringResource(id = R.string.course_duration_specified, course.duration)
+        stringResource(id = R.string.discovery_course_duration_specified, course.duration)
     }
 
     Surface(

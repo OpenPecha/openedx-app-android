@@ -18,6 +18,8 @@
     <string name="schools_and_partners">Schools and Partners</string>
     <string name="apply">Apply</string>
     <string name="clear">Clear</string>
+    <string name="discovery_course_duration_specified">%1$s</string>
+    <string name="discovery_course_duration_unspecified">Duration not specified</string>
     <string name="course_duration_specified">Course Duration: %1$s</string>
     <string name="course_duration_unspecified">Course Duration: Not specified</string>
 

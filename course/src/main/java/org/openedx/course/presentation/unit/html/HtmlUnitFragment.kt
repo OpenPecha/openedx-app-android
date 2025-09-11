@@ -179,13 +179,13 @@ fun HtmlUnitView(
         Surface(
             modifier = Modifier
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
-            color = Color.White
+            color = MaterialTheme.appColors.background
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = bottomPadding)
-                    .background(Color.White)
+                    .background(MaterialTheme.appColors.background)
                     .then(border),
                 contentAlignment = Alignment.TopCenter
             ) {
@@ -277,7 +277,7 @@ private fun HTMLContentView(
     AndroidView(
         modifier = Modifier
             .then(screenWidth)
-            .background(MaterialTheme.appColors.background),
+            .background(MaterialTheme.appColors.primary),
         factory = {
             WebView(context).apply {
                 addJavascriptInterface(

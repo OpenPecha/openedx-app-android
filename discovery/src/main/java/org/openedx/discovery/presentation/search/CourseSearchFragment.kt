@@ -17,12 +17,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -36,10 +36,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -63,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.openedx.core.ui.AuthButtonsPanel
@@ -184,9 +187,9 @@ private fun CourseSearchScreen(
     onRegisterClick: () -> Unit,
     onSignInClick: () -> Unit,
 ) {
-    val scrollState = rememberLazyListState()
+    val scrollState = rememberLazyGridState()
     val firstVisibleIndex = remember {
-        mutableStateOf(scrollState.firstVisibleItemIndex)
+        mutableIntStateOf(scrollState.firstVisibleItemIndex)
     }
     val pullToRefreshState = rememberPullToRefreshState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -205,6 +208,16 @@ private fun CourseSearchScreen(
     LaunchedEffect(key1 = scrollState.isScrollInProgress) {
         keyboardController?.hide()
         focusManager.clearFocus()
+    }
+
+    LaunchedEffect(scrollState) {
+        snapshotFlow { firstVisibleIndex }.collectLatest { index ->
+            val totalItems = scrollState.layoutInfo.totalItemsCount
+            val lastVisibleItem = scrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            if (lastVisibleItem >= totalItems - LOAD_MORE_THRESHOLD) {
+                paginationCallback()
+            }
+        }
     }
 
     Scaffold(
@@ -261,6 +274,12 @@ private fun CourseSearchScreen(
                     compact = PaddingValues(horizontal = 24.dp, vertical = 28.dp)
                 )
             )
+        }
+
+        val columns = if (windowSize.width == WindowType.Compact) {
+            GridCells.Fixed(2)
+        } else {
+            GridCells.Fixed(3)
         }
 
         HandleUIMessage(uiMessage = uiMessage, snackbarHostState = snackbarHostState)
@@ -342,12 +361,15 @@ private fun CourseSearchScreen(
                         isRefreshing = refreshing,
                         onRefresh = { onSwipeRefresh() }
                     ) {
-                        LazyColumn(
-                            Modifier.fillMaxSize(),
-                            contentPadding = contentPaddings,
-                            state = scrollState
+                        LazyVerticalGrid(
+                            columns = columns,
+                            modifier = Modifier.fillMaxSize(),
+                            state = scrollState,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = contentPaddings
                         ) {
-                            item {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
                                 Column {
                                     Text(
                                         modifier = Modifier.testTag("txt_search_results_title"),
@@ -368,11 +390,9 @@ private fun CourseSearchScreen(
                             }
                             when (state) {
                                 is CourseSearchUIState.Loading -> {
-                                    item {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
                                         Box(
-                                            Modifier
-                                                .fillMaxSize()
-                                                .padding(vertical = 25.dp),
+                                            Modifier.fillMaxWidth().padding(vertical = 25.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             CircularProgressIndicator(color = MaterialTheme.appColors.primary)
@@ -381,7 +401,11 @@ private fun CourseSearchScreen(
                                 }
 
                                 is CourseSearchUIState.Courses -> {
-                                    items(state.courses) { course ->
+                                    items(
+                                        count = state.courses.size,
+                                        key = { index -> "${state.courses[index].courseId}_$index" }
+                                    ) { index ->
+                                        val course = state.courses[index]
                                         DiscoveryCourseItem(
                                             apiHostUrl = apiHostUrl,
                                             course,
@@ -390,10 +414,9 @@ private fun CourseSearchScreen(
                                                 onItemClick(courseId)
                                             }
                                         )
-                                        HorizontalDivider()
                                     }
-                                    item {
-                                        if (canLoadMore) {
+                                    if (canLoadMore) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()

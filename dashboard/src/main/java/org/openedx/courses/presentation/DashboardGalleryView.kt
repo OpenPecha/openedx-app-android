@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +50,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
@@ -335,7 +336,7 @@ private fun SecondaryCourses(
         MOBILE_COURSE_LIST_ITEM_COUNT
     }
     val rows = if (windowSize.isTablet) 2 else 1
-    val height = if (windowSize.isTablet) 322.dp else 152.dp
+    val height = if (windowSize.isTablet) 400.dp else 200.dp
     val items = courses.take(itemsCount)
     Column(
         modifier = Modifier
@@ -426,8 +427,7 @@ private fun CourseListItem(
 ) {
     Card(
         modifier = Modifier
-            .width(140.dp)
-            .height(152.dp)
+            .width(190.dp)
             .padding(4.dp)
             .clickable {
                 onCourseClick(course)
@@ -448,17 +448,18 @@ private fun CourseListItem(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(90.dp)
+                        .aspectRatio(16f / 9f)
+                        .clip(MaterialTheme.appShapes.courseImageShape)
                 )
                 Text(
                     modifier = Modifier
-                        .fillMaxHeight()
+                        .fillMaxWidth()
                         .padding(horizontal = 4.dp, vertical = 8.dp),
                     text = course.course.name,
                     style = MaterialTheme.appTypography.titleSmall,
                     color = MaterialTheme.appColors.textDark,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 2,
+                    maxLines = 3,
                     minLines = 2
                 )
             }
@@ -552,10 +553,9 @@ private fun PrimaryCourseCard(
                     .placeholder(CoreR.drawable.core_no_image_course)
                     .build(),
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp)
             )
             val progress: Float = try {
                 primaryCourse.progress.assignmentsCompleted.toFloat() /

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -406,10 +407,10 @@ fun CourseItem(
     apiHostUrl: String,
     onClick: (EnrolledCourse) -> Unit,
 ) {
+    val courseNameHeight = 60.dp
     Card(
         modifier = modifier
             .width(170.dp)
-            .height(180.dp)
             .clickable {
                 onClick(course)
             },
@@ -429,7 +430,7 @@ fun CourseItem(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(90.dp)
+                        .aspectRatio(16f / 9f)
                 )
                 val progress: Float = try {
                     course.progress.assignmentsCompleted.toFloat() / course.progress.totalAssignmentsCount.toFloat()
@@ -467,7 +468,8 @@ fun CourseItem(
                 )
                 Text(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .height(courseNameHeight),
                     text = course.course.name,
                     style = MaterialTheme.appTypography.titleSmall,
                     color = MaterialTheme.appColors.textDark,

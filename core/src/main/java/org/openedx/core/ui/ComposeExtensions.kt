@@ -77,13 +77,22 @@ fun LazyListState.shouldLoadMore(rememberedIndex: MutableState<Int>, threshold: 
 
 fun LazyGridState.shouldLoadMore(rememberedIndex: MutableState<Int>, threshold: Int): Boolean {
     val firstVisibleIndex = this.firstVisibleItemIndex
+    val totalItems = layoutInfo.totalItemsCount
+    val visibleItems = layoutInfo.visibleItemsInfo.size
+
+    // Extra check: if all items fit on screen, trigger load more
+    if (totalItems in 1..visibleItems) {
+        return true
+    }
+
     if (rememberedIndex.value != firstVisibleIndex) {
         rememberedIndex.value = firstVisibleIndex
         val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-        return lastVisibleIndex >= layoutInfo.totalItemsCount - 1 - threshold
+        return lastVisibleIndex >= totalItems - 1 - threshold
     }
     return false
 }
+
 
 fun Modifier.statusBarsInset(): Modifier = composed {
     val topInset = (LocalContext.current as? InsetHolder)?.topInset ?: 0

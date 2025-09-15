@@ -23,7 +23,7 @@ class DashboardGalleryFragment : Fragment() {
     }
 
     companion object {
-        const val TABLET_COURSE_LIST_ITEM_COUNT = 7
-        const val MOBILE_COURSE_LIST_ITEM_COUNT = 7
+        const val TABLET_COURSE_LIST_ITEM_COUNT = 5
+        const val MOBILE_COURSE_LIST_ITEM_COUNT = 3
     }
 }

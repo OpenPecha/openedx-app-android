@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,12 +25,12 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -45,7 +46,6 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -163,25 +164,28 @@ fun DiscoveryCourseItem(
     val adjustedCourseTitle = course.name + "\n"
 
     val durationText = if (course.duration.isBlank()) {
-        stringResource(id = R.string.course_duration_unspecified)
+        stringResource(id = R.string.discovery_course_duration_unspecified)
     } else {
-        stringResource(id = R.string.course_duration_specified, course.duration)
+        stringResource(id = R.string.discovery_course_duration_specified, course.duration)
     }
+
+    // Height for course title
+    val lineHeightSp = MaterialTheme.appTypography.titleSmall.lineHeight
+    val lineHeight = with(LocalDensity.current) { lineHeightSp.toDp() + 5.dp }
 
     Surface(
         modifier = Modifier
             .testTag("btn_course_card")
             .fillMaxWidth()
-            .height(140.dp)
-            .clickable { onClick(course.courseId) }
-            .background(MaterialTheme.appColors.background),
+            .clickable { onClick(course.courseId) },
+        shape = MaterialTheme.appShapes.cardShape,
+        elevation = 4.dp,
+        color = MaterialTheme.appColors.surface
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.appColors.background),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -192,39 +196,41 @@ fun DiscoveryCourseItem(
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(imageWidth)
-                    .height(105.dp)
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f) // image scales with width
                     .clip(MaterialTheme.appShapes.courseImageShape)
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(105.dp),
+                    .padding(10.dp)
             ) {
                 Text(
-                    modifier = Modifier
-                        .testTag("txt_course_org")
-                        .padding(top = 12.dp),
+                    modifier = Modifier.testTag("txt_course_org"),
                     text = course.org,
                     color = MaterialTheme.appColors.textFieldHint,
-                    style = MaterialTheme.appTypography.labelMedium
+                    style = MaterialTheme.appTypography.labelMedium,
+                    maxLines = 1,
+                    softWrap = true,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     modifier = Modifier
                         .testTag("txt_course_title")
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = 4.dp)
+                        .height(lineHeight * 3),
                     text = adjustedCourseTitle,
                     color = MaterialTheme.appColors.textPrimary,
                     style = MaterialTheme.appTypography.titleSmall,
-                    maxLines = 2,
+                    maxLines = 3,
                     softWrap = true,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp)
+                        .padding(top = 4.dp)
                         .testTag("txt_course_duration"),
                     text = durationText,
                     color = MaterialTheme.appColors.textFieldHint,
@@ -315,7 +321,7 @@ internal fun DiscoveryScreen(
     selectedOrg: Organization?,
     onOrgSelected: (Organization) -> Unit,
     onClearOrgClick: () -> Unit,
-    ) {
+) {
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
@@ -323,7 +329,7 @@ internal fun DiscoveryScreen(
     )
 
     val scaffoldState = rememberScaffoldState()
-    val scrollState = rememberLazyListState()
+    val scrollState = rememberLazyGridState()
     val firstVisibleIndex = remember {
         mutableIntStateOf(scrollState.firstVisibleItemIndex)
     }
@@ -409,6 +415,12 @@ internal fun DiscoveryScreen(
                         compact = PaddingValues(horizontal = 24.dp, vertical = 20.dp)
                     )
                 )
+            }
+
+            val columns = if (windowSize.width == WindowType.Compact) {
+                GridCells.Fixed(2)   // phone
+            } else {
+                GridCells.Fixed(3)   // tablet / larger
             }
 
             HandleUIMessage(uiMessage = uiMessage, scaffoldState = scaffoldState)
@@ -572,14 +584,17 @@ internal fun DiscoveryScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    LazyColumn(
-                                        Modifier
+                                    LazyVerticalGrid(
+                                        columns = columns,
+                                        modifier = Modifier
                                             .fillMaxHeight()
                                             .then(contentWidth),
                                         contentPadding = contentPaddings,
-                                        state = scrollState
+                                        state = scrollState,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        item {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
                                             Column {
                                                 if (selectedOrg != null) {
                                                     Text(
@@ -610,18 +625,19 @@ internal fun DiscoveryScreen(
                                                 Spacer(modifier = Modifier.height(14.dp))
                                             }
                                         }
-                                        items(state.courses) { course ->
+                                        items(
+                                            count = state.courses.size,
+                                            key = { index -> "${state.courses[index].courseId}_$index" }
+                                        ) { index ->
+                                            val course = state.courses[index]
                                             DiscoveryCourseItem(
                                                 apiHostUrl = apiHostUrl,
                                                 course = course,
                                                 windowSize = windowSize,
-                                                onClick = {
-                                                    onItemClick(course)
-                                                }
+                                                onClick = { onItemClick(course) }
                                             )
-                                            Divider()
                                         }
-                                        item {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
                                             if (canLoadMore) {
                                                 Box(
                                                     modifier = Modifier

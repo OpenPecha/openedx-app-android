@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -188,7 +189,7 @@ private fun DashboardGalleryView(
     val contentWidth by remember(key1 = windowSize) {
         mutableStateOf(
             windowSize.windowSizeValue(
-                expanded = Modifier.widthIn(Dp.Unspecified, 560.dp),
+                expanded = Modifier.widthIn(Dp.Unspecified, 700.dp),
                 compact = Modifier.fillMaxWidth(),
             )
         )
@@ -357,8 +358,8 @@ private fun SecondaryCourses(
     } else {
         MOBILE_COURSE_LIST_ITEM_COUNT
     }
-    val rows = if (windowSize.isTablet) 2 else 1
-    val height = if (windowSize.isTablet) 400.dp else 200.dp
+    val rows = if (windowSize.isTablet) 1 else 1
+    val height = if (windowSize.isTablet) 200.dp else 200.dp
     val items = courses.take(itemsCount)
     Column(
         modifier = Modifier

@@ -279,7 +279,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
 
     @androidx.annotation.OptIn(UnstableApi::class)
     private fun setPlayerMedia(mediaItem: MediaItem) {
-        if (viewModel.videoUrl.endsWith(".m3u8")) {
+        if (viewModel.videoUrl.contains(".m3u8", ignoreCase = true)) {
             val factory = DefaultDataSource.Factory(requireContext())
             val mediaSource: HlsMediaSource =
                 HlsMediaSource.Factory(factory).createMediaSource(mediaItem)

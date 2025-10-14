@@ -198,8 +198,9 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
             val movieMetadata = MediaMetadata.Builder()
                 .setMediaType(MediaMetadata.MEDIA_TYPE_MOVIE)
                 .build()
+            val normalizedUrl = normalizeUrl(viewModel.videoUrl)
             val mediaItem = MediaItem.Builder().setMediaMetadata(movieMetadata)
-                .setUri(viewModel.videoUrl)
+                .setUri(normalizedUrl)
                 .setMimeType("video/*")
                 .build()
 
@@ -279,7 +280,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun setPlayerMedia(mediaItem: MediaItem) {
-        if (viewModel.videoUrl.endsWith(".m3u8")) {
+        if (viewModel.videoUrl.contains(".m3u8", ignoreCase = true)) {
             val factory = DefaultDataSource.Factory(requireContext())
             val mediaSource: HlsMediaSource =
                 HlsMediaSource.Factory(factory).createMediaSource(mediaItem)
@@ -289,6 +290,19 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
                 mediaItem,
                 viewModel.getCurrentVideoTime()
             )
+        }
+    }
+
+    // Convert to https when possible (helps avoid cleartext/network-security issues).
+    private fun normalizeUrl(url: String?): String? {
+        if (url.isNullOrBlank()) return url
+        val trimmed = url.trim()
+        return try {
+            if (trimmed.startsWith("http://", ignoreCase = true)) {
+                trimmed.replaceFirst("http://", "https://", ignoreCase = true)
+            } else trimmed
+        } catch (e: Exception) {
+            trimmed
         }
     }
 

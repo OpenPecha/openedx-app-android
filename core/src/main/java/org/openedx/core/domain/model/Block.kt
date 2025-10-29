@@ -8,6 +8,7 @@ import kotlinx.parcelize.RawValue
 import org.openedx.core.AppDataConstants
 import org.openedx.core.BlockType
 import org.openedx.core.module.db.DownloadModel
+import org.openedx.core.module.db.DownloadedState
 import org.openedx.core.module.db.FileType
 import org.openedx.core.utils.PreviewHelper
 import org.openedx.core.utils.VideoPreview
@@ -31,6 +32,7 @@ data class Block(
     val descendantsType: BlockType,
     val completion: Double,
     val containsGatedContent: Boolean = false,
+    val gatedContent: GatedContent? = null,
     val downloadModel: DownloadModel? = null,
     val assignmentProgress: AssignmentProgress?,
     val due: Date?,
@@ -53,7 +55,14 @@ data class Block(
             null
         }
 
-    fun isGated() = containsGatedContent
+    fun isDownloading(): Boolean {
+        return downloadModel?.downloadedState == DownloadedState.DOWNLOADING ||
+                downloadModel?.downloadedState == DownloadedState.WAITING
+    }
+
+    fun isDownloaded() = downloadModel?.downloadedState == DownloadedState.DOWNLOADED
+
+    fun isGated() = containsGatedContent || gatedContent?.gated == true
 
     fun isCompleted() = completion == 1.0
 

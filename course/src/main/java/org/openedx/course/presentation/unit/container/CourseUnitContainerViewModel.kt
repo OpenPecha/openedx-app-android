@@ -97,6 +97,12 @@ class CourseUnitContainerViewModel(
                 courseName = courseStructure.name
                 this@CourseUnitContainerViewModel.blocks.clearAndAddAll(blocks)
 
+                blocks.find { it.id == unitId }?.let { unitBlock ->
+                    if (unitBlock.containsGatedContent && unitBlock.descendants.isNotEmpty()) {
+                        val firstDesc = blocks.firstOrNull { it.id == unitBlock.descendants.first() }
+                    }
+                }
+
                 setupCurrentIndex(componentId)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -131,6 +137,17 @@ class CourseUnitContainerViewModel(
                 currentSectionIndex = blocks.indexOfFirst {
                     it.descendants.contains(blocks[currentVerticalIndex].id)
                 }
+                val blockGatedContent = block.gatedContent
+                val isBlockGatedWithPrereq = blockGatedContent?.gated == true && blockGatedContent.prereqId.isNotEmpty()
+
+                val firstDescendant = if (!isBlockGatedWithPrereq && block.descendants.isNotEmpty()) {
+                    blocks.firstOrNull { it.id == block.descendants.first() }
+                } else null
+
+                val firstDescGatedContent = firstDescendant?.gatedContent
+                val firstDescGatedWithPrereq = firstDescGatedContent?.gated == true &&
+                                               firstDescGatedContent.prereqId.isNotEmpty()
+
                 if (block.descendants.isNotEmpty() || block.isGated()) {
                     _descendantsBlocks.value =
                         block.descendants.mapNotNull { descendant ->
@@ -139,8 +156,13 @@ class CourseUnitContainerViewModel(
                     _subSectionUnitBlocks.value =
                         getSubSectionUnitBlocks(blocks, getSubSectionId(unitId))
 
-                    if (_descendantsBlocks.value.isEmpty()) {
-                        _descendantsBlocks.value = listOf(block)
+                    when {
+                        _descendantsBlocks.value.isEmpty() || isBlockGatedWithPrereq -> {
+                            _descendantsBlocks.value = listOf(block)
+                        }
+                        firstDescGatedWithPrereq && firstDescendant != null -> {
+                            _descendantsBlocks.value = listOf(firstDescendant)
+                        }
                     }
                 } else {
                     setNextVerticalIndex()

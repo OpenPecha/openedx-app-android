@@ -29,6 +29,7 @@ data class Block(
     val descendantsType: BlockType,
     val completion: Double,
     val containsGatedContent: Boolean = false,
+    val gatedContent: GatedContent? = null,
     val downloadModel: DownloadModel? = null,
     val assignmentProgress: AssignmentProgress?,
     val due: Date?,
@@ -58,7 +59,7 @@ data class Block(
 
     fun isDownloaded() = downloadModel?.downloadedState == DownloadedState.DOWNLOADED
 
-    fun isGated() = containsGatedContent
+    fun isGated() = containsGatedContent || gatedContent?.gated == true
 
     fun isCompleted() = completion == 1.0
 

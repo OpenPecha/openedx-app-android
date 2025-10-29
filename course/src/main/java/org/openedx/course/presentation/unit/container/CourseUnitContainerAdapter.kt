@@ -7,6 +7,7 @@ import org.openedx.core.domain.model.Block
 import org.openedx.core.module.db.DownloadModel
 import org.openedx.course.presentation.unit.NotAvailableUnitFragment
 import org.openedx.course.presentation.unit.NotAvailableUnitType
+import org.openedx.course.presentation.unit.PrerequisiteLockedFragment
 import org.openedx.course.presentation.unit.html.HtmlUnitFragment
 import org.openedx.course.presentation.unit.video.VideoUnitFragment
 import org.openedx.course.presentation.unit.video.YoutubeVideoUnitFragment
@@ -30,6 +31,14 @@ class CourseUnitContainerAdapter(
         val noNetwork = !viewModel.hasNetworkConnection
 
         return when {
+            isBlockGatedWithPrerequisite(block) -> {
+                createPrerequisiteLockedFragment(block)
+            }
+
+            block.containsGatedContent && block.gatedContent == null -> {
+                createNotAvailableUnitFragment(block, NotAvailableUnitType.MOBILE_UNSUPPORTED)
+            }
+
             isBlockNotDownloaded(block, noNetwork, offlineUrl) -> {
                 createNotAvailableUnitFragment(block, NotAvailableUnitType.NOT_DOWNLOADED)
             }
@@ -83,6 +92,11 @@ class CourseUnitContainerAdapter(
                 block.isWordCloudBlock ||
                 block.isLTIConsumerBlock ||
                 block.isSurveyBlock
+    }
+
+    private fun isBlockGatedWithPrerequisite(block: Block): Boolean {
+        val gatedContent = block.gatedContent
+        return gatedContent?.gated == true && gatedContent.prereqId.isNotEmpty()
     }
 
     private fun createHtmlUnitFragment(
@@ -144,6 +158,14 @@ class CourseUnitContainerAdapter(
             block.displayName,
             FragmentViewType.MAIN_CONTENT.name,
             block.id
+        )
+    }
+
+    private fun createPrerequisiteLockedFragment(block: Block): Fragment {
+        val gatedContent = block.gatedContent
+        return PrerequisiteLockedFragment.newInstance(
+            prereqId = gatedContent?.prereqId.orEmpty(),
+            prereqSectionName = gatedContent?.prereqSectionName.orEmpty(),
         )
     }
 }

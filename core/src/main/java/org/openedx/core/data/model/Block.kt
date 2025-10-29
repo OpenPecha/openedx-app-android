@@ -38,6 +38,8 @@ data class Block(
     val completion: Double?,
     @SerializedName("contains_gated_content")
     val containsGatedContent: Boolean?,
+    @SerializedName("gated_content")
+    val gatedContent: GatedContent?,
     @SerializedName("assignment_progress")
     val assignmentProgress: AssignmentProgress?,
     @SerializedName("due")
@@ -63,6 +65,7 @@ data class Block(
             studentViewData = studentViewData?.mapToDomain(),
             studentViewMultiDevice = studentViewMultiDevice ?: false,
             blockCounts = blockCounts?.mapToDomain()!!,
+            gatedContent = gatedContent?.mapToDomain(),
             completion = completion ?: 0.0,
             containsGatedContent = containsGatedContent ?: false,
             assignmentProgress = assignmentProgress?.mapToDomain(),

@@ -46,6 +46,8 @@ data class BlockDb(
     @ColumnInfo("contains_gated_content")
     val containsGatedContent: Boolean,
     @Embedded
+    val gatedContent: GatedContentDb?,
+    @Embedded
     val assignmentProgress: AssignmentProgressDb?,
     @ColumnInfo("due")
     val due: String?,
@@ -78,6 +80,7 @@ data class BlockDb(
             blockCounts = blockCounts.mapToDomain(),
             descendants = descendants,
             descendantsType = descendantsType,
+            gatedContent = gatedContent?.mapToDomain(),
             completion = completion,
             containsGatedContent = containsGatedContent,
             assignmentProgress = assignmentProgress?.mapToDomain(),
@@ -104,6 +107,7 @@ data class BlockDb(
                     graded = graded ?: false,
                     studentViewData = StudentViewDataDb.createFrom(studentViewData),
                     studentViewMultiDevice = studentViewMultiDevice ?: false,
+                    gatedContent = gatedContent?.mapToRoomEntity(),
                     blockCounts = BlockCountsDb.createFrom(blockCounts),
                     completion = completion ?: 0.0,
                     containsGatedContent = containsGatedContent ?: false,
@@ -253,4 +257,25 @@ data class OfflineDownloadDb(
             fileSize = fileSize ?: 0
         )
     }
+}
+
+data class GatedContentDb(
+    @ColumnInfo("prereq_id")
+    val prereqId: String?,
+    @ColumnInfo("prereq_section_name")
+    val prereqSectionName: String?,
+    @ColumnInfo("gated")
+    val gated: Boolean?,
+    @ColumnInfo("gated_section_name")
+    val gatedSectionName: String?,
+    @ColumnInfo("prereq_url")
+    val prereqUrl: String?
+) {
+    fun mapToDomain() = org.openedx.core.domain.model.GatedContent(
+        prereqId = prereqId.orEmpty(),
+        prereqSectionName = prereqSectionName.orEmpty(),
+        gated = gated ?: false,
+        gatedSectionName = gatedSectionName.orEmpty(),
+        prereqUrl = prereqUrl.orEmpty()
+    )
 }

@@ -23,18 +23,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import org.koin.android.ext.android.inject
+import org.openedx.course.presentation.unit.container.CourseViewMode
 import org.openedx.core.ui.OpenEdXButton
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
 import org.openedx.core.ui.theme.appTypography
+import org.openedx.course.presentation.CourseRouter
 import org.openedx.foundation.extension.parcelable
 import org.openedx.course.R as courseR
 
 class PrerequisiteLockedFragment : Fragment() {
 
-    interface PrerequisiteNavigationListener {
-        fun navigateToPrerequisite(prereqId: String)
-    }
+    private val router by inject<CourseRouter>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,6 +50,16 @@ class PrerequisiteLockedFragment : Fragment() {
                 PrerequisiteLockedScreen(
                     prereqSectionName = prereqData?.prereqSectionName ?: "",
                     onNavigateToPrerequisite = {
+                        prereqData?.let { data ->
+                            router.navigateToCourseSubsections(
+                                fm = requireActivity().supportFragmentManager,
+                                courseId = data.courseId,
+                                subSectionId = data.prereqId,
+                                unitId = "",
+                                componentId = "",
+                                mode = data.mode
+                            )
+                        }
                     }
                 )
             }
@@ -59,14 +70,16 @@ class PrerequisiteLockedFragment : Fragment() {
         private const val ARG_PREREQUISITE_DATA = "prerequisite_data"
 
         fun newInstance(
+            courseId: String,
             prereqId: String,
             prereqSectionName: String,
+            mode: CourseViewMode
         ): PrerequisiteLockedFragment {
             val fragment = PrerequisiteLockedFragment()
             fragment.arguments = Bundle().apply {
                 putParcelable(
                     ARG_PREREQUISITE_DATA,
-                    PrerequisiteData(prereqId, prereqSectionName)
+                    PrerequisiteData(courseId, prereqId, prereqSectionName, mode)
                 )
             }
             return fragment
@@ -76,8 +89,10 @@ class PrerequisiteLockedFragment : Fragment() {
 
 @kotlinx.parcelize.Parcelize
 data class PrerequisiteData(
+    val courseId: String,
     val prereqId: String,
     val prereqSectionName: String,
+    val mode: CourseViewMode
 ) : android.os.Parcelable
 
 @Composable

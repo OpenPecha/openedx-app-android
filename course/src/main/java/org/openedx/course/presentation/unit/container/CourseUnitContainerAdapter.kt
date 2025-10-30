@@ -164,8 +164,10 @@ class CourseUnitContainerAdapter(
     private fun createPrerequisiteLockedFragment(block: Block): Fragment {
         val gatedContent = block.gatedContent
         return PrerequisiteLockedFragment.newInstance(
+            courseId = viewModel.courseId,
             prereqId = gatedContent?.prereqId.orEmpty(),
             prereqSectionName = gatedContent?.prereqSectionName.orEmpty(),
+            mode = viewModel.mode
         )
     }
 }

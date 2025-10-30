@@ -76,6 +76,9 @@ class CourseUnitContainerViewModel(
     var hasNextBlock = false
 
     private var currentMode: CourseViewMode? = null
+    val mode: CourseViewMode
+        get() = currentMode ?: CourseViewMode.FULL
+
     private var currentComponentId = ""
     private var courseName = ""
 

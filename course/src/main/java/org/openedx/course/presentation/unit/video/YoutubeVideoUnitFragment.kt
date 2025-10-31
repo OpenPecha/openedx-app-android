@@ -4,6 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebSettings
+import android.webkit.WebChromeClient
+import androidx.appcompat.app.AppCompatActivity
+
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,7 +56,7 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
     private var blockId = ""
 
-    private var isPlayerInitialized = false
+
 
     private val youtubeTrackerListener = YouTubePlayerTracker()
 
@@ -137,6 +141,15 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
         binding.connectionError.isVisible = !viewModel.hasInternetConnection
 
+        // Hide WebView initially - it's only a fallback
+        binding.fallbackWebview?.visibility = View.GONE
+        binding.youtubePlayerView.visibility = View.VISIBLE
+
+        // Initialize YouTube player library (original approach)
+        initializeYoutubePlayer()
+    }
+
+    private fun initializeYoutubePlayer() {
         lifecycle.addObserver(binding.youtubePlayerView)
 
         val options = IFramePlayerOptions.Builder()
@@ -146,6 +159,7 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
         val listener = object : AbstractYouTubePlayerListener() {
             var isMarkBlockCompletedCalled = false
+            var hasError = false
 
             override fun onCurrentSecond(youTubePlayer: YouTubePlayer, second: Float) {
                 super.onCurrentSecond(youTubePlayer, second)
@@ -178,8 +192,21 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                 )
             }
 
+            override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+                super.onError(youTubePlayer, error)
+                // If YouTube player fails, switch to WebView fallback
+                if (!hasError) {
+                    hasError = true
+                    android.util.Log.w("YoutubePlayer", "YouTube player error: $error - switching to WebView fallback")
+                    switchToWebViewFallback()
+                }
+            }
+
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 super.onReady(youTubePlayer)
+                android.util.Log.d("YoutubePlayer", "=== onReady called ===")
+                android.util.Log.d("YoutubePlayer", "Video URL: ${viewModel.videoUrl}")
+
                 _youTubePlayer = youTubePlayer
                 if (_binding != null) {
                     val defPlayerUiController = DefaultPlayerUiController(
@@ -200,12 +227,17 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                 }
 
                 viewModel.videoUrl.split("watch?v=").getOrNull(1)?.let { videoId ->
+                    android.util.Log.d("YoutubePlayer", "Extracted video ID: '$videoId'")
                     if (viewModel.isPlaying && isResumed) {
+                        android.util.Log.d("YoutubePlayer", "Action: loadVideo (autoplay)")
+                        android.util.Log.d("YoutubePlayer", "Video ID: '$videoId', Start time: ${viewModel.getCurrentVideoTime() / 1000f} sec, isResumed: $isResumed")
                         youTubePlayer.loadVideo(
                             videoId,
                             viewModel.getCurrentVideoTime().toFloat() / 1000
                         )
                     } else {
+                        android.util.Log.d("YoutubePlayer", "Action: cueVideo (user must click play)")
+                        android.util.Log.d("YoutubePlayer", "Video ID: '$videoId', Start time: ${viewModel.getCurrentVideoTime() / 1000f} sec")
                         youTubePlayer.cueVideo(
                             videoId,
                             viewModel.getCurrentVideoTime().toFloat() / 1000
@@ -222,10 +254,18 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
             }
         }
 
-        if (!isPlayerInitialized) {
-            binding.youtubePlayerView.initialize(listener, options)
-            isPlayerInitialized = true
-        }
+        binding.youtubePlayerView.initialize(listener, options)
+    }
+
+    private fun switchToWebViewFallback() {
+        android.util.Log.w("YoutubePlayer", "Switching to WebView fallback")
+
+        // Hide YouTube player, show WebView
+        binding.youtubePlayerView.visibility = View.GONE
+        binding.fallbackWebview?.visibility = View.VISIBLE
+
+        // Setup and load WebView
+        setupWebViewPlayer()
     }
 
     override fun onPause() {
@@ -234,10 +274,379 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
     }
 
     override fun onDestroyView() {
-        isPlayerInitialized = false
         _youTubePlayer = null
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun setupWebViewPlayer() {
+        val videoId = extractYouTubeVideoId(viewModel.videoUrl) ?: run {
+            android.util.Log.e("YoutubePlayer", "Failed to extract video ID from: ${viewModel.videoUrl}")
+            return
+        }
+
+        android.util.Log.d("YoutubePlayer", "Setting up WebView for video: $videoId")
+        android.util.Log.d("YoutubePlayer", "Full URL: ${viewModel.videoUrl}")
+
+        // Hide YouTube player library view, show WebView
+        binding.youtubePlayerView.visibility = View.GONE
+        binding.fallbackWebview?.visibility = View.VISIBLE
+
+        // Configure WebView with better settings for video playback
+        binding.fallbackWebview?.apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.mediaPlaybackRequiresUserGesture = false
+            settings.setSupportZoom(false)
+            settings.loadWithOverviewMode = true
+            settings.useWideViewPort = true
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
+            settings.cacheMode = WebSettings.LOAD_DEFAULT
+            settings.databaseEnabled = true
+
+            // Enable fullscreen support
+            settings.javaScriptCanOpenWindowsAutomatically = true
+
+            // Set black background like native player
+            setBackgroundColor(android.graphics.Color.BLACK)
+
+            // Add WebChromeClient for fullscreen support
+            webChromeClient = object : WebChromeClient() {
+                private var customView: View? = null
+                private var customViewCallback: CustomViewCallback? = null
+
+                override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                    if (customView != null) {
+                        callback?.onCustomViewHidden()
+                        return
+                    }
+
+                    customView = view
+                    customViewCallback = callback
+
+                    // Enter fullscreen
+                    (activity as? AppCompatActivity)?.let { activity ->
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                            activity.window.insetsController?.let { controller ->
+                                controller.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+                                controller.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                            }
+                        } else {
+                            @Suppress("DEPRECATION")
+                            activity.window.decorView.systemUiVisibility = (
+                                View.SYSTEM_UI_FLAG_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            )
+                        }
+
+                        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+                        contentView.addView(view, ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        ))
+                    }
+                }
+
+                override fun onHideCustomView() {
+                    (activity as? AppCompatActivity)?.let { activity ->
+                        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+                        contentView.removeView(customView)
+
+                        // Exit fullscreen
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                            activity.window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+                        } else {
+                            @Suppress("DEPRECATION")
+                            activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                        }
+                    }
+
+                    customView = null
+                    customViewCallback?.onCustomViewHidden()
+                    customViewCallback = null
+                }
+            }
+
+            // Add WebViewClient to handle errors and block external navigation
+            webViewClient = object : android.webkit.WebViewClient() {
+                @Deprecated("Deprecated in Java")
+                override fun onReceivedError(
+                    view: android.webkit.WebView?,
+                    errorCode: Int,
+                    description: String?,
+                    failingUrl: String?
+                ) {
+                    android.util.Log.e("YoutubePlayer", "WebView error: $errorCode - $description")
+                    // Let YouTube's own error handling show in the iframe
+                }
+
+                @Deprecated("Deprecated in Java")
+                override fun shouldOverrideUrlLoading(
+                    view: android.webkit.WebView?,
+                    url: String?
+                ): Boolean {
+                    // Block all navigation attempts - keep user in the video player
+                    if (url != null) {
+                        android.util.Log.d("YoutubePlayer", "Blocked navigation to: $url")
+
+                        // Check if it's trying to navigate to YouTube website, channel, or external links
+                        when {
+                            url.contains("youtube.com/channel") ||
+                            url.contains("youtube.com/user") ||
+                            url.contains("youtube.com/c/") ||
+                            url.contains("youtube.com/@") ||
+                            url.contains("youtube.com/watch") ||
+                            url.contains("youtube.com/playlist") ||
+                            url.contains("youtu.be") -> {
+                                android.util.Log.w("YoutubePlayer", "Blocked YouTube navigation attempt")
+                                return true // Block navigation
+                            }
+                            url.startsWith("http") && !url.contains("staging.sherab.org") -> {
+                                android.util.Log.w("YoutubePlayer", "Blocked external navigation attempt")
+                                return true // Block any external navigation
+                            }
+                        }
+                    }
+                    return false // Allow internal navigation (shouldn't happen in our case)
+                }
+
+                override fun shouldOverrideUrlLoading(
+                    view: android.webkit.WebView?,
+                    request: android.webkit.WebResourceRequest?
+                ): Boolean {
+                    // Modern API version - also block navigation
+                    val url = request?.url?.toString()
+                    if (url != null) {
+                        android.util.Log.d("YoutubePlayer", "Blocked navigation to: $url")
+
+                        when {
+                            url.contains("youtube.com/channel") ||
+                            url.contains("youtube.com/user") ||
+                            url.contains("youtube.com/c/") ||
+                            url.contains("youtube.com/@") ||
+                            url.contains("youtube.com/watch") ||
+                            url.contains("youtube.com/playlist") ||
+                            url.contains("youtu.be") -> {
+                                android.util.Log.w("YoutubePlayer", "Blocked YouTube navigation attempt")
+                                return true
+                            }
+                            url.startsWith("http") && !url.contains("staging.sherab.org") -> {
+                                android.util.Log.w("YoutubePlayer", "Blocked external navigation attempt")
+                                return true
+                            }
+                        }
+                    }
+                    return false
+                }
+            }
+        }
+
+        // Try primary embed approach first
+        loadYouTubeEmbed(videoId)
+    }
+
+    private fun loadYouTubeEmbed(videoId: String) {
+        // Calculate start time in seconds
+        val startTime = (viewModel.getCurrentVideoTime() / 1000).toInt()
+
+        // Create HTML with YouTube IFrame Player API for native-like experience
+        val embedHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                <style>
+                    * { 
+                        margin: 0; 
+                        padding: 0; 
+                        box-sizing: border-box;
+                    }
+                    html, body { 
+                        width: 100%;
+                        height: 100%;
+                        background: #000;
+                        overflow: hidden;
+                    }
+                    .player-container {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: #000;
+                    }
+                    #player {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    /* Hide YouTube branding and clickable elements */
+                    .ytp-chrome-top,
+                    .ytp-show-cards-title,
+                    .ytp-watermark,
+                    .ytp-title,
+                    .ytp-title-text,
+                    .ytp-title-link,
+                    .ytp-title-channel,
+                    .ytp-cards-button,
+                    .ytp-share-button,
+                    .ytp-watch-later-button,
+                    .iv-branding,
+                    .branding-img,
+                    .ytp-pause-overlay,
+                    .ytp-ce-element,
+                    .annotation {
+                        display: none !important;
+                        visibility: hidden !important;
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="player-container">
+                    <div id="player"></div>
+                </div>
+                
+                <script src="https://www.youtube.com/iframe_api"></script>
+                <script>
+                    var player;
+                    
+                    function onYouTubeIframeAPIReady() {
+                        player = new YT.Player('player', {
+                            height: '100%',
+                            width: '100%',
+                            videoId: '$videoId',
+                            playerVars: {
+                                'autoplay': 1,
+                                'playsinline': 1,
+                                'rel': 0,
+                                'modestbranding': 1,
+                                'start': $startTime,
+                                'controls': 1,
+                                'fs': 1,
+                                'cc_load_policy': 0,
+                                'iv_load_policy': 3,
+                                'showinfo': 0,
+                                'color': 'white',
+                                'disablekb': 0,
+                                'enablejsapi': 1,
+                                'origin': 'https://staging.sherab.org',
+                                'widget_referrer': 'https://staging.sherab.org'
+                            },
+                            events: {
+                                'onReady': onPlayerReady,
+                                'onError': onPlayerError,
+                                'onStateChange': onPlayerStateChange
+                            }
+                        });
+                    }
+                    
+                    function onPlayerReady(event) {
+                        console.log('YouTube player ready');
+                        
+                        // Hide branding elements after player loads
+                        hideYouTubeBranding();
+                        
+                        try {
+                            event.target.playVideo();
+                        } catch (e) {
+                            console.log('Autoplay failed, user interaction required');
+                        }
+                    }
+                    
+                    function hideYouTubeBranding() {
+                        // Additional JavaScript to hide elements that CSS might miss
+                        setTimeout(function() {
+                            var iframe = document.querySelector('iframe');
+                            if (iframe && iframe.contentDocument) {
+                                try {
+                                    var style = iframe.contentDocument.createElement('style');
+                                    style.textContent = '.ytp-chrome-top, .ytp-watermark, .ytp-title, .ytp-share-button { display: none !important; }';
+                                    iframe.contentDocument.head.appendChild(style);
+                                } catch (e) {
+                                    console.log('Cannot access iframe content due to CORS');
+                                }
+                            }
+                        }, 1000);
+                    }
+                    
+                    function onPlayerStateChange(event) {
+                        console.log('Player state changed:', event.data);
+                        // Re-hide branding on state changes
+                        hideYouTubeBranding();
+                    }
+                    
+                    function onPlayerError(event) {
+                        console.log('YouTube embed failed - Video ID: $videoId - Error code: ' + event.data);
+                        // Just log the error, YouTube will show its own error UI if needed
+                    }
+                </script>
+            </body>
+            </html>
+        """.trimIndent()
+
+        // Load the HTML
+        binding.fallbackWebview?.loadDataWithBaseURL(
+            "https://staging.sherab.org",
+            embedHtml,
+            "text/html",
+            "UTF-8",
+            null
+        )
+
+        android.util.Log.d("YoutubePlayer", "✅ WebView player loaded with YouTube IFrame API")
+    }
+
+
+    private fun extractYouTubeVideoId(url: String): String? {
+        return try {
+            when {
+                // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+                url.contains("watch?v=") -> {
+                    val parts = url.split("watch?v=")
+                    if (parts.size > 1) {
+                        parts[1].split("&").firstOrNull()
+                    } else null
+                }
+                // Short URL: https://youtu.be/VIDEO_ID
+                url.contains("youtu.be/") -> {
+                    val parts = url.split("youtu.be/")
+                    if (parts.size > 1) {
+                        parts[1].split("?").firstOrNull()?.split("&")?.firstOrNull()
+                    } else null
+                }
+                // Embed URL: https://www.youtube.com/embed/VIDEO_ID
+                url.contains("/embed/") -> {
+                    val parts = url.split("/embed/")
+                    if (parts.size > 1) {
+                        parts[1].split("?").firstOrNull()?.split("&")?.firstOrNull()
+                    } else null
+                }
+                // v parameter: https://youtube.com/v/VIDEO_ID
+                url.contains("/v/") -> {
+                    val parts = url.split("/v/")
+                    if (parts.size > 1) {
+                        parts[1].split("?").firstOrNull()?.split("&")?.firstOrNull()
+                    } else null
+                }
+                else -> {
+                    android.util.Log.w("YoutubePlayer", "Unknown YouTube URL format: $url")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("YoutubePlayer", "Error extracting video ID from: $url", e)
+            null
+        }
     }
 
     companion object {

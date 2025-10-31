@@ -2,6 +2,7 @@ package org.openedx.course.presentation.unit.video
 
 import android.os.Bundle
 import android.view.View
+import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.WindowInsetsCompat
@@ -12,7 +13,6 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.YouTubePlayerTracker
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.ui.DefaultPlayerUiController
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -39,8 +39,8 @@ class YoutubeVideoFullScreenFragment : Fragment(R.layout.fragment_youtube_video_
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel.videoUrl = requireArguments().getString(ARG_BLOCK_VIDEO_URL, "")
-        blockId = requireArguments().getString(ARG_BLOCK_ID, "")
+        // Enable WebView debugging for YouTube player
+        WebView.setWebContentsDebuggingEnabled(true)
         if (viewModel.currentVideoTime == 0L) {
             viewModel.currentVideoTime = requireArguments().getLong(ARG_VIDEO_TIME, 0)
         }
@@ -67,8 +67,10 @@ class YoutubeVideoFullScreenFragment : Fragment(R.layout.fragment_youtube_video_
 
         lifecycle.addObserver(binding.youtubePlayerView)
         val options = IFramePlayerOptions.Builder()
-            .controls(0)
-            .rel(0)
+            .controls(0)  // Hide default controls (using custom UI)
+            .rel(0)       // Don't show related videos
+            .ivLoadPolicy(3)  // Critical: Disable video annotations
+            .ccLoadPolicy(1)  // Show closed captions
             .build()
 
         binding.youtubePlayerView.initialize(
@@ -80,12 +82,20 @@ class YoutubeVideoFullScreenFragment : Fragment(R.layout.fragment_youtube_video_
                     state: PlayerConstants.PlayerState,
                 ) {
                     super.onStateChange(youTubePlayer, state)
+                    android.util.Log.d("YoutubePlayerFS", "Player state: $state")
+
                     if (state == PlayerConstants.PlayerState.ENDED) {
                         viewModel.markBlockCompleted(blockId, CourseAnalyticsKey.YOUTUBE.key)
                     }
                     viewModel.isPlaying = when (state) {
-                        PlayerConstants.PlayerState.PLAYING -> true
-                        PlayerConstants.PlayerState.PAUSED -> false
+                        PlayerConstants.PlayerState.PLAYING -> {
+                            android.util.Log.d("YoutubePlayerFS", "✅ Fullscreen video PLAYING")
+                            true
+                        }
+                        PlayerConstants.PlayerState.PAUSED -> {
+                            android.util.Log.d("YoutubePlayerFS", "⏸️ Fullscreen video PAUSED")
+                            false
+                        }
                         else -> return
                     }
                 }
@@ -108,21 +118,23 @@ class YoutubeVideoFullScreenFragment : Fragment(R.layout.fragment_youtube_video_
                 override fun onReady(youTubePlayer: YouTubePlayer) {
                     super.onReady(youTubePlayer)
                     binding.youtubePlayerView.isVisible = true
-                    val defPlayerUiController =
-                        DefaultPlayerUiController(binding.youtubePlayerView, youTubePlayer)
-                    defPlayerUiController.setFullScreenButtonClickListener {
-                        parentFragmentManager.popBackStack()
-                    }
 
-                    binding.youtubePlayerView.setCustomPlayerUi(defPlayerUiController.rootView)
+                    android.util.Log.d("YoutubePlayerFS", "=== Fullscreen onReady ===")
+                    android.util.Log.d("YoutubePlayerFS", "Video URL: ${viewModel.videoUrl}")
 
-                    val videoId = viewModel.videoUrl.split("watch?v=")[1]
-                    if (viewModel.isPlaying == true) {
-                        youTubePlayer.loadVideo(videoId, viewModel.currentVideoTime.toFloat() / 1000)
+                    val videoId = extractYouTubeVideoId(viewModel.videoUrl)
+                    android.util.Log.d("YoutubePlayerFS", "Extracted video ID: '$videoId'")
+
+                    if (videoId != null) {
+                        val startTime = viewModel.currentVideoTime.toFloat() / 1000
+                        // Always use cueVideo - avoids autoplay policy issues
+                        android.util.Log.d("YoutubePlayerFS", "Action: cueVideo, Start time: $startTime sec")
+
+                        youTubePlayer.cueVideo(videoId, startTime)
+                        youTubePlayer.addListener(youtubeTrackerListener)
                     } else {
-                        youTubePlayer.cueVideo(videoId, viewModel.currentVideoTime.toFloat() / 1000)
+                        android.util.Log.e("YoutubePlayerFS", "❌ FAILED to extract video ID from: ${viewModel.videoUrl}")
                     }
-                    youTubePlayer.addListener(youtubeTrackerListener)
                 }
             },
             options
@@ -132,6 +144,48 @@ class YoutubeVideoFullScreenFragment : Fragment(R.layout.fragment_youtube_video_
     override fun onDestroyView() {
         viewModel.sendTime()
         super.onDestroyView()
+    }
+
+    private fun extractYouTubeVideoId(url: String): String? {
+        return try {
+            when {
+                // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+                url.contains("watch?v=") -> {
+                    val parts = url.split("watch?v=")
+                    if (parts.size > 1) {
+                        parts[1].split("&").firstOrNull()
+                    } else null
+                }
+                // Short URL: https://youtu.be/VIDEO_ID
+                url.contains("youtu.be/") -> {
+                    val parts = url.split("youtu.be/")
+                    if (parts.size > 1) {
+                        parts[1].split("?").firstOrNull()?.split("&")?.firstOrNull()
+                    } else null
+                }
+                // Embed URL: https://www.youtube.com/embed/VIDEO_ID
+                url.contains("/embed/") -> {
+                    val parts = url.split("/embed/")
+                    if (parts.size > 1) {
+                        parts[1].split("?").firstOrNull()?.split("&")?.firstOrNull()
+                    } else null
+                }
+                // v parameter: https://youtube.com/v/VIDEO_ID
+                url.contains("/v/") -> {
+                    val parts = url.split("/v/")
+                    if (parts.size > 1) {
+                        parts[1].split("?").firstOrNull()?.split("&")?.firstOrNull()
+                    } else null
+                }
+                else -> {
+                    android.util.Log.w("YoutubePlayer", "Unknown YouTube URL format: $url")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("YoutubePlayer", "Error extracting video ID from: $url", e)
+            null
+        }
     }
 
     companion object {

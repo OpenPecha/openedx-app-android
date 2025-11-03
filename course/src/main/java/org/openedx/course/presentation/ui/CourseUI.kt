@@ -136,16 +136,22 @@ fun CourseSectionCard(
         ) {
             val completedIconPainter = if (block.isCompleted()) {
                 painterResource(R.drawable.course_ic_task_alt)
+            } else if (block.isGated()) {
+                painterResource(R.drawable.ic_lock)
             } else {
                 painterResource(coreR.drawable.ic_core_chapter_icon)
             }
             val completedIconColor = if (block.isCompleted()) {
                 MaterialTheme.appColors.primary
+            } else if (block.isGated()) {
+                MaterialTheme.appColors.textSecondary
             } else {
                 MaterialTheme.appColors.onSurface
             }
             val completedIconDescription = if (block.isCompleted()) {
                 stringResource(id = R.string.course_accessibility_section_completed)
+            } else if (block.isGated()) {
+                stringResource(id = R.string.course_accessibility_section_locked)
             } else {
                 stringResource(id = R.string.course_accessibility_section_uncompleted)
             }
@@ -780,11 +786,15 @@ fun CourseSubSectionItem(
     val context = LocalContext.current
     val icon = if (block.isCompleted()) {
         painterResource(R.drawable.course_ic_task_alt)
+    } else if (block.isGated()) {
+        painterResource(R.drawable.ic_lock)
     } else {
         painterResource(coreR.drawable.ic_core_chapter_icon)
     }
     val iconColor = if (block.isCompleted()) {
         MaterialTheme.appColors.successGreen
+    } else if (block.isGated()) {
+        MaterialTheme.appColors.textSecondary
     } else {
         MaterialTheme.appColors.onSurface
     }

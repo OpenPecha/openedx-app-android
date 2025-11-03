@@ -452,26 +452,33 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                 hasNextBlock = hasNext
             }
 
-            NavigationUnitsButtons(
-                hasPrevBlock = hasPrevBlock,
-                nextButtonText = nextButtonText,
-                hasNextBlock = hasNextBlock,
-                isVerticalNavigation = !viewModel.isCourseUnitProgressEnabled,
-                onPrevClick = {
-                    handlePrevClick { next, hasPrev, hasNext ->
-                        nextButtonText = next
-                        hasPrevBlock = hasPrev
-                        hasNextBlock = hasNext
+            val currentIndex by viewModel.indexInContainer.observeAsState(0)
+            val descendantsBlocks by viewModel.descendantsBlocks.collectAsState()
+            val currentDisplayedBlock = descendantsBlocks.getOrNull(currentIndex)
+            val isContentLocked = currentDisplayedBlock?.isGated() ?: false
+
+            if (!isContentLocked) {
+                NavigationUnitsButtons(
+                    hasPrevBlock = hasPrevBlock,
+                    nextButtonText = nextButtonText,
+                    hasNextBlock = hasNextBlock,
+                    isVerticalNavigation = !viewModel.isCourseUnitProgressEnabled,
+                    onPrevClick = {
+                        handlePrevClick { next, hasPrev, hasNext ->
+                            nextButtonText = next
+                            hasPrevBlock = hasPrev
+                            hasNextBlock = hasNext
+                        }
+                    },
+                    onNextClick = {
+                        handleNextClick { next, hasPrev, hasNext ->
+                            nextButtonText = next
+                            hasPrevBlock = hasPrev
+                            hasNextBlock = hasNext
+                        }
                     }
-                },
-                onNextClick = {
-                    handleNextClick { next, hasPrev, hasNext ->
-                        nextButtonText = next
-                        hasPrevBlock = hasPrev
-                        hasNextBlock = hasNext
-                    }
-                }
-            )
+                )
+            }
         }
     }
 

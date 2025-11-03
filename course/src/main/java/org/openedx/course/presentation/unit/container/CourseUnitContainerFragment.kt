@@ -538,24 +538,31 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                     }
                 )
             }
-        } else {
-            OpenEdXTheme {
-                var nextButtonText by rememberSaveable {
-                    mutableStateOf(viewModel.nextButtonText)
-                }
-                var hasNextBlock by rememberSaveable {
-                    mutableStateOf(viewModel.hasNextBlock)
-                }
-                var hasPrevBlock by rememberSaveable {
-                    mutableStateOf(viewModel.hasNextBlock)
-                }
+            return
+        }
+        OpenEdXTheme {
+            var nextButtonText by rememberSaveable {
+                mutableStateOf(viewModel.nextButtonText)
+            }
+            var hasNextBlock by rememberSaveable {
+                mutableStateOf(viewModel.hasNextBlock)
+            }
+            var hasPrevBlock by rememberSaveable {
+                mutableStateOf(viewModel.hasNextBlock)
+            }
 
-                updateNavigationButtons { next, hasPrev, hasNext ->
-                    nextButtonText = next
-                    hasPrevBlock = hasPrev
-                    hasNextBlock = hasNext
-                }
+            updateNavigationButtons { next, hasPrev, hasNext ->
+                nextButtonText = next
+                hasPrevBlock = hasPrev
+                hasNextBlock = hasNext
+            }
 
+            val currentIndex by viewModel.indexInContainer.observeAsState(0)
+            val descendantsBlocks by viewModel.descendantsBlocks.collectAsState()
+            val currentDisplayedBlock = descendantsBlocks.getOrNull(currentIndex)
+            val isContentLocked = currentDisplayedBlock?.isGated() ?: false
+
+            if (!isContentLocked) {
                 NavigationUnitsButtons(
                     hasPrevBlock = hasPrevBlock,
                     nextButtonText = nextButtonText,

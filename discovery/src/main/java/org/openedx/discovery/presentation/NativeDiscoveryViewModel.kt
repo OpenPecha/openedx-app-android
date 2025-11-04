@@ -99,17 +99,21 @@ class NativeDiscoveryViewModel(
                         page = -1
                     }
                     coursesList.addAll(response.results)
+                    _uiState.value = DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = response.pagination.count
+                    )
+                    if (_organizations.value.isNullOrEmpty()) {
+                        fetchOrganizations()
+                    }
                 } else {
                     val cachedList = interactor.getCoursesListFromCache()
                     _canLoadMore.value = false
                     page = -1
                     coursesList.addAll(cachedList)
-                }
-                val totalCount = response?.pagination?.count
-                _uiState.value = totalCount?.let {
-                    DiscoveryUIState.Courses(
+                    _uiState.value = DiscoveryUIState.Courses(
                         courses = ArrayList(coursesList),
-                        numCourses = it
+                        numCourses = coursesList.size
                     )
                 }
             } catch (e: Exception) {
@@ -160,6 +164,9 @@ class NativeDiscoveryViewModel(
                         courses = ArrayList(coursesList),
                         numCourses = it
                     )
+                }
+                if (_organizations.value.isNullOrEmpty() && networkConnection.isOnline()) {
+                    fetchOrganizations()
                 }
             } catch (e: Exception) {
                 if (e.isInternetError()) {
@@ -224,10 +231,16 @@ class NativeDiscoveryViewModel(
     fun fetchOrganizations() {
         viewModelScope.launch {
             try {
-                val orgs = repository.getOrganizations()
-                _organizations.value = orgs
+                if (networkConnection.isOnline()) {
+                    val orgs = repository.getOrganizations()
+                    _organizations.value = orgs
+                } else {
+                    // Set empty list when offline to avoid crashes
+                    _organizations.value = emptyList()
+                }
             } catch (e: Exception) {
-                Log.e("DiscoveryViewModel", "Failed to load orgs", e)
+                // Set empty list on error to avoid crashes
+                _organizations.value = emptyList()
             }
         }
     }

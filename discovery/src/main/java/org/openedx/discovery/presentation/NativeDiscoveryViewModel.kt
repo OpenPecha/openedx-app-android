@@ -83,17 +83,23 @@ class NativeDiscoveryViewModel(
                         page = -1
                     }
                     coursesList.addAll(response.results)
+                    _uiState.value = DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = response.pagination.count
+                    )
+                    if (_organizations.value.isNullOrEmpty()) {
+                        fetchOrganizations()
+                    }
                 } else {
                     val cachedList = interactor.getCoursesListFromCache()
                     _canLoadMore.value = false
                     page = -1
                     coursesList.addAll(cachedList)
+                    _uiState.value = DiscoveryUIState.Courses(
+                        courses = ArrayList(coursesList),
+                        numCourses = coursesList.size
+                    )
                 }
-                val totalCount = response?.pagination?.count ?: coursesList.size
-                _uiState.value = DiscoveryUIState.Courses(
-                    courses = ArrayList(coursesList),
-                    numCourses = totalCount
-                )
             } catch (e: Exception) {
                 handleErrorUiMessage(
                     throwable = e,
@@ -138,6 +144,9 @@ class NativeDiscoveryViewModel(
                     courses = ArrayList(coursesList),
                     numCourses = response.pagination.count
                 )
+                if (_organizations.value.isNullOrEmpty() && networkConnection.isOnline()) {
+                    fetchOrganizations()
+                }
             } catch (e: Exception) {
                 handleErrorUiMessage(
                     throwable = e,
@@ -179,11 +188,13 @@ class NativeDiscoveryViewModel(
     fun fetchOrganizations() {
         viewModelScope.launch {
             try {
-                _organizations.value = repository.getOrganizations()
+                if (networkConnection.isOnline()) {
+                    _organizations.value = repository.getOrganizations()
+                } else {
+                    _organizations.value = emptyList()
+                }
             } catch (e: Exception) {
-                handleErrorUiMessage(
-                    throwable = e,
-                )
+                _organizations.value = emptyList()
             }
         }
     }

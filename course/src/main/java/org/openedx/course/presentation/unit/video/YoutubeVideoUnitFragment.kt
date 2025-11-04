@@ -56,6 +56,11 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
     private var blockId = ""
 
+    // Track if we're using WebView fallback (persists across rotations)
+    private var isUsingWebViewFallback = false
+
+    // Track last known WebView playback position (persists across rotations)
+    private var webViewLastPlaybackPosition: Float = 0f
 
 
     private val youtubeTrackerListener = YouTubePlayerTracker()
@@ -72,6 +77,12 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
             blockId = getString(ARG_BLOCK_ID, "")
         }
         viewModel.downloadSubtitles()
+
+        savedInstanceState?.let {
+            isUsingWebViewFallback = it.getBoolean(KEY_USING_WEBVIEW_FALLBACK, false)
+            webViewLastPlaybackPosition = it.getFloat(KEY_WEBVIEW_PLAYBACK_POSITION, 0f)
+            android.util.Log.d("YoutubeVideoUnit", "Restored state - isUsingWebViewFallback: $isUsingWebViewFallback, playback position: $webViewLastPlaybackPosition sec")
+        }
     }
 
     override fun onCreateView(
@@ -141,12 +152,19 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
         binding.connectionError.isVisible = !viewModel.hasInternetConnection
 
-        // Hide WebView initially - it's only a fallback
-        binding.fallbackWebview?.visibility = View.GONE
-        binding.youtubePlayerView.visibility = View.VISIBLE
-
-        // Initialize YouTube player library (original approach)
-        initializeYoutubePlayer()
+        if (isUsingWebViewFallback) {
+            // Hide YouTube player, show WebView
+            binding.youtubePlayerView.visibility = View.GONE
+            binding.fallbackWebview.visibility = View.VISIBLE
+            // Re-setup WebView
+            setupWebViewPlayer()
+        } else {
+            // Hide WebView initially - it's only a fallback
+            binding.fallbackWebview.visibility = View.GONE
+            binding.youtubePlayerView.visibility = View.VISIBLE
+            // Initialize YouTube player library (original approach)
+            initializeYoutubePlayer()
+        }
     }
 
     private fun initializeYoutubePlayer() {
@@ -258,11 +276,11 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
     }
 
     private fun switchToWebViewFallback() {
-        android.util.Log.w("YoutubePlayer", "Switching to WebView fallback")
+        isUsingWebViewFallback = true
 
         // Hide YouTube player, show WebView
         binding.youtubePlayerView.visibility = View.GONE
-        binding.fallbackWebview?.visibility = View.VISIBLE
+        binding.fallbackWebview.visibility = View.VISIBLE
 
         // Setup and load WebView
         setupWebViewPlayer()
@@ -273,6 +291,30 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
         _youTubePlayer?.pause()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Save state before rotation
+        outState.putBoolean(KEY_USING_WEBVIEW_FALLBACK, isUsingWebViewFallback)
+
+        // If using WebView, get current playback position via JavaScript
+        if (isUsingWebViewFallback && _binding != null) {
+            binding.fallbackWebview?.evaluateJavascript(
+                "(function() { try { return player ? player.getCurrentTime() : 0; } catch(e) { return 0; } })()"
+            ) { result ->
+                try {
+                    val position = result?.toFloatOrNull() ?: 0f
+                    webViewLastPlaybackPosition = position
+                    android.util.Log.d("YoutubeVideoUnit", "Saved WebView playback position: $position sec")
+                } catch (e: Exception) {
+                    android.util.Log.e("YoutubeVideoUnit", "Error saving playback position", e)
+                }
+            }
+        }
+
+        outState.putFloat(KEY_WEBVIEW_PLAYBACK_POSITION, webViewLastPlaybackPosition)
+        android.util.Log.d("YoutubeVideoUnit", "Saving state - isUsingWebViewFallback: $isUsingWebViewFallback, position: $webViewLastPlaybackPosition sec")
+    }
+
     override fun onDestroyView() {
         _youTubePlayer = null
         super.onDestroyView()
@@ -281,19 +323,16 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
     private fun setupWebViewPlayer() {
         val videoId = extractYouTubeVideoId(viewModel.videoUrl) ?: run {
-            android.util.Log.e("YoutubePlayer", "Failed to extract video ID from: ${viewModel.videoUrl}")
+            android.util.Log.e("YoutubeVideoUnit", "Failed to extract video ID from: ${viewModel.videoUrl}")
             return
         }
 
-        android.util.Log.d("YoutubePlayer", "Setting up WebView for video: $videoId")
-        android.util.Log.d("YoutubePlayer", "Full URL: ${viewModel.videoUrl}")
-
         // Hide YouTube player library view, show WebView
         binding.youtubePlayerView.visibility = View.GONE
-        binding.fallbackWebview?.visibility = View.VISIBLE
+        binding.fallbackWebview.visibility = View.VISIBLE
 
         // Configure WebView with better settings for video playback
-        binding.fallbackWebview?.apply {
+        binding.fallbackWebview.apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.mediaPlaybackRequiresUserGesture = false
@@ -311,6 +350,9 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
             // Set black background like native player
             setBackgroundColor(android.graphics.Color.BLACK)
+
+            // Add JavaScript interface to track playback position
+            addJavascriptInterface(WebAppInterface(), "Android")
 
             // Add WebChromeClient for fullscreen support
             webChromeClient = object : WebChromeClient() {
@@ -336,10 +378,10 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                         } else {
                             @Suppress("DEPRECATION")
                             activity.window.decorView.systemUiVisibility = (
-                                View.SYSTEM_UI_FLAG_FULLSCREEN
-                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            )
+                                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                    )
                         }
 
                         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -395,12 +437,12 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                         // Check if it's trying to navigate to YouTube website, channel, or external links
                         when {
                             url.contains("youtube.com/channel") ||
-                            url.contains("youtube.com/user") ||
-                            url.contains("youtube.com/c/") ||
-                            url.contains("youtube.com/@") ||
-                            url.contains("youtube.com/watch") ||
-                            url.contains("youtube.com/playlist") ||
-                            url.contains("youtu.be") -> {
+                                    url.contains("youtube.com/user") ||
+                                    url.contains("youtube.com/c/") ||
+                                    url.contains("youtube.com/@") ||
+                                    url.contains("youtube.com/watch") ||
+                                    url.contains("youtube.com/playlist") ||
+                                    url.contains("youtu.be") -> {
                                 android.util.Log.w("YoutubePlayer", "Blocked YouTube navigation attempt")
                                 return true // Block navigation
                             }
@@ -424,12 +466,12 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
 
                         when {
                             url.contains("youtube.com/channel") ||
-                            url.contains("youtube.com/user") ||
-                            url.contains("youtube.com/c/") ||
-                            url.contains("youtube.com/@") ||
-                            url.contains("youtube.com/watch") ||
-                            url.contains("youtube.com/playlist") ||
-                            url.contains("youtu.be") -> {
+                                    url.contains("youtube.com/user") ||
+                                    url.contains("youtube.com/c/") ||
+                                    url.contains("youtube.com/@") ||
+                                    url.contains("youtube.com/watch") ||
+                                    url.contains("youtube.com/playlist") ||
+                                    url.contains("youtu.be") -> {
                                 android.util.Log.w("YoutubePlayer", "Blocked YouTube navigation attempt")
                                 return true
                             }
@@ -449,8 +491,15 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
     }
 
     private fun loadYouTubeEmbed(videoId: String) {
-        // Calculate start time in seconds
-        val startTime = (viewModel.getCurrentVideoTime() / 1000).toInt()
+        // Use restored position if available (after rotation), otherwise use ViewModel's position
+        val startTime = if (webViewLastPlaybackPosition > 0) {
+            android.util.Log.d("YoutubeVideoUnit", "Using restored position: $webViewLastPlaybackPosition sec")
+            webViewLastPlaybackPosition.toInt()
+        } else {
+            val vmTime = (viewModel.getCurrentVideoTime() / 1000).toInt()
+            android.util.Log.d("YoutubeVideoUnit", "Using ViewModel position: $vmTime sec")
+            vmTime
+        }
 
         // Create HTML with YouTube IFrame Player API for native-like experience
         val embedHtml = """
@@ -519,6 +568,7 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                 <script src="https://www.youtube.com/iframe_api"></script>
                 <script>
                     var player;
+                    var positionTracker;
                     
                     function onYouTubeIframeAPIReady() {
                         player = new YT.Player('player', {
@@ -550,17 +600,41 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                         });
                     }
                     
-                    function onPlayerReady(event) {
-                        console.log('YouTube player ready');
-                        
+                    function onPlayerReady(event) {                        
                         // Hide branding elements after player loads
                         hideYouTubeBranding();
                         
                         try {
                             event.target.playVideo();
+                            console.log('Autoplay initiated');
+                            
+                            // Start tracking playback position every 500ms
+                            startPositionTracking();
                         } catch (e) {
-                            console.log('Autoplay failed, user interaction required');
+                            console.log('Autoplay failed, user interaction required: ' + e);
                         }
+                    }
+                    
+                    function startPositionTracking() {
+                        // Clear any existing tracker
+                        if (positionTracker) {
+                            clearInterval(positionTracker);
+                        }
+                        
+                        // Track position every 500ms and send to Android
+                        positionTracker = setInterval(function() {
+                            if (player && player.getCurrentTime) {
+                                try {
+                                    var currentTime = player.getCurrentTime();
+                                    // Send position to Android via JavaScript interface
+                                    if (window.Android && window.Android.updatePlaybackPosition) {
+                                        window.Android.updatePlaybackPosition(currentTime);
+                                    }
+                                } catch (e) {
+                                    console.log('Error tracking position: ' + e);
+                                }
+                            }
+                        }, 500);
                     }
                     
                     function hideYouTubeBranding() {
@@ -580,14 +654,47 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
                     }
                     
                     function onPlayerStateChange(event) {
-                        console.log('Player state changed:', event.data);
+                        var states = {
+                            '-1': 'UNSTARTED',
+                            '0': 'ENDED',
+                            '1': 'PLAYING',
+                            '2': 'PAUSED',
+                            '3': 'BUFFERING',
+                            '5': 'CUED'
+                        };
+                        console.log('Player state changed: ' + states[event.data] + ' (' + event.data + ')');
+                        
                         // Re-hide branding on state changes
                         hideYouTubeBranding();
+                        
+                        // Start or stop position tracking based on state
+                        if (event.data === 1) { // PLAYING
+                            startPositionTracking();
+                        } else if (event.data === 2 || event.data === 0) { // PAUSED or ENDED
+                            if (positionTracker) {
+                                clearInterval(positionTracker);
+                            }
+                        }
                     }
                     
                     function onPlayerError(event) {
-                        console.log('YouTube embed failed - Video ID: $videoId - Error code: ' + event.data);
-                        // Just log the error, YouTube will show its own error UI if needed
+                        var errorCodes = {
+                            '2': 'Invalid parameter value',
+                            '5': 'HTML5 player error',
+                            '100': 'Video not found or removed',
+                            '101': 'Video cannot be played in embedded player - Embedding disabled by uploader',
+                            '150': 'Video cannot be played in embedded player - Same as 101'
+                        };
+                        console.error('=== YouTube Player Error ===');
+                        console.error('Video ID: $videoId');
+                        console.error('Error Code: ' + event.data);
+                        console.error('Error Description: ' + (errorCodes[event.data] || 'Unknown error'));
+                        console.error('Video URL: ${viewModel.videoUrl}');
+                        
+                        // Stop position tracking on error
+                        if (positionTracker) {
+                            clearInterval(positionTracker);
+                        }
                     }
                 </script>
             </body>
@@ -602,8 +709,6 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
             "UTF-8",
             null
         )
-
-        android.util.Log.d("YoutubePlayer", "✅ WebView player loaded with YouTube IFrame API")
     }
 
 
@@ -649,6 +754,18 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
         }
     }
 
+    /**
+     * JavaScript interface to receive playback position updates from WebView
+     */
+    inner class WebAppInterface {
+        @android.webkit.JavascriptInterface
+        fun updatePlaybackPosition(position: Float) {
+            webViewLastPlaybackPosition = position
+            // Also update ViewModel's position for consistency
+            viewModel.setCurrentVideoTime((position * 1000f).toLong())
+        }
+    }
+
     companion object {
 
         private const val ARG_VIDEO_URL = "videoUrl"
@@ -656,6 +773,8 @@ class YoutubeVideoUnitFragment : Fragment(R.layout.fragment_youtube_video_unit) 
         private const val ARG_BLOCK_ID = "blockId"
         private const val ARG_COURSE_ID = "courseId"
         private const val ARG_TITLE = "blockTitle"
+        private const val KEY_USING_WEBVIEW_FALLBACK = "usingWebViewFallback"
+        private const val KEY_WEBVIEW_PLAYBACK_POSITION = "webViewPlaybackPosition"
 
         const val VIDEO_COMPLETION_THRESHOLD = 0.8f
         const val RATE_DIALOG_THRESHOLD = 0.99f

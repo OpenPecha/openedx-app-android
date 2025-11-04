@@ -121,6 +121,12 @@
             </intent-filter>
         </service>
 
+        <!-- Remove Facebook CustomTabActivity, app was prompting to open facebook links -->
+        <!-- This prevents the app from intercepting fb:// scheme links -->
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            tools:node="remove" />
+
     </application>
 
 </manifest>

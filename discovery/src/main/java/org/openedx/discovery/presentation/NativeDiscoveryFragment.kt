@@ -39,7 +39,7 @@ class NativeDiscoveryFragment : Fragment() {
             OpenEdXTheme {
                 val windowSize = rememberWindowSize()
 
-                val uiState by viewModel.uiState.observeAsState()
+                val uiState by viewModel.uiState.observeAsState(DiscoveryUIState.Loading)
                 val uiMessage by viewModel.uiMessage.observeAsState()
                 val canLoadMore by viewModel.canLoadMore.observeAsState(false)
                 val refreshing by viewModel.isUpdating.observeAsState(false)
@@ -50,7 +50,7 @@ class NativeDiscoveryFragment : Fragment() {
 
                 DiscoveryScreen(
                     windowSize = windowSize,
-                    state = uiState!!,
+                    state = uiState,
                     uiMessage = uiMessage,
                     apiHostUrl = viewModel.apiHostUrl,
                     canLoadMore = canLoadMore,

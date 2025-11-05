@@ -177,6 +177,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         setupVideoList()
         checkUnitsListShown()
         setupChapterEndDialogListener()
+        observeDataChanges()
     }
 
     private fun setupViewPagerInsets() {
@@ -378,6 +379,55 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
     override fun onResume() {
         super.onResume()
         activity?.onBackPressedDispatcher?.addCallback(onBackPressedCallback)
+
+        // Only check prerequisite completion if:
+        // 1. We were viewing locked content
+        // 2. There was a tracked prerequisite
+        // 3. That prerequisite was incomplete when we first loaded
+        // This ensures we only make API calls when there's a real possibility of completion
+        lifecycleScope.launch {
+            if (viewModel.shouldRefreshForPrerequisiteCompletion()) {
+                // The prerequisite subsection is now fully complete, refresh data
+                viewModel.refreshCourseData()
+            }
+        }
+    }
+
+    private fun observeDataChanges() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.descendantsBlocks.collect { blocks ->
+                if (blocks.isNotEmpty() && ::adapter.isInitialized) {
+                    val wasShowingLockedContent = adapter.itemCount == 1 &&
+                            adapter.getBlock(0).let { block ->
+                                block.gatedContent?.gated == true ||
+                                (block.type == BlockType.VERTICAL && block.descendants.isEmpty())
+                            }
+
+                    // Update adapter when blocks change (e.g., after refreshing from prerequisite)
+                    adapter = CourseUnitContainerAdapter(this@CourseUnitContainerFragment, blocks, viewModel)
+                    binding.viewPager.adapter = adapter
+
+                    // If we were showing locked content and now have unlocked content, navigate to it
+                    if (wasShowingLockedContent && blocks.size > 1) {
+                        // Content is now unlocked, set to first item
+                        binding.viewPager.setCurrentItem(0, true)
+                    } else if (wasShowingLockedContent && blocks.size == 1) {
+                        // Check if the single block is no longer locked
+                        val currentBlock = blocks[0]
+                        val isStillLocked = currentBlock.gatedContent?.gated == true
+                        if (!isStillLocked && currentBlock.descendants.isNotEmpty()) {
+                            // Content is now unlocked, navigate to the actual content
+                            router.navigateToCourseContainer(
+                                fm = requireActivity().supportFragmentManager,
+                                courseId = viewModel.courseId,
+                                unitId = currentBlock.id,
+                                mode = requireArguments().serializable(ARG_MODE)!!
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onPause() {
@@ -475,7 +525,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
     }
 
     private fun handleUnitsClick() {
-        if (binding.subSectionUnitsList.visibility == View.VISIBLE) {
+        if (binding.subSectionUnitsList.isVisible) {
             binding.subSectionUnitsList.visibility = View.GONE
             binding.subSectionUnitsBg.visibility = View.GONE
             viewModel.setUnitsListVisibility(false)

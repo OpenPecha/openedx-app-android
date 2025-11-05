@@ -25,6 +25,8 @@ class CourseUnitContainerAdapter(
 
     override fun createFragment(position: Int): Fragment = unitBlockFragment(blocks[position])
 
+    fun getBlock(position: Int): Block = blocks[position]
+
     private fun unitBlockFragment(block: Block): Fragment {
         val downloadedModel = viewModel.getDownloadModelById(block.id)
         val offlineUrl = downloadedModel?.let { it.path + File.separator + "index.html" } ?: ""

@@ -39,6 +39,13 @@ class CourseUnitContainerViewModel(
 
     private val blocks = ArrayList<Block>()
 
+    private var isRefreshing = false
+
+    // Track when we're viewing locked content due to prerequisites
+    private var isViewingLockedContent = false
+    private var trackedPrereqId: String? = null
+    private var wasPrereqIncomplete = false
+
     val isCourseExpandableSectionsEnabled get() = config.getCourseUIConfig().isCourseDropdownNavigationEnabled
 
     val isCourseUnitProgressEnabled get() = config.getCourseUIConfig().isCourseUnitProgressEnabled
@@ -88,28 +95,63 @@ class CourseUnitContainerViewModel(
     val hasNetworkConnection: Boolean
         get() = networkConnection.isOnline()
 
-    fun loadBlocks(mode: CourseViewMode, componentId: String = "") {
+    fun loadBlocks(mode: CourseViewMode, componentId: String = "", forceRefresh: Boolean = false) {
         currentMode = mode
         viewModelScope.launch {
             try {
                 val courseStructure = when (mode) {
-                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId)
+                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = forceRefresh)
                     CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
                 }
                 val blocks = courseStructure.blockData
                 courseName = courseStructure.name
                 this@CourseUnitContainerViewModel.blocks.clearAndAddAll(blocks)
-
-                blocks.find { it.id == unitId }?.let { unitBlock ->
-                    if (unitBlock.containsGatedContent && unitBlock.descendants.isNotEmpty()) {
-                        val firstDesc = blocks.firstOrNull { it.id == unitBlock.descendants.first() }
-                    }
-                }
-
                 setupCurrentIndex(componentId)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    fun refreshCourseData() {
+        currentMode?.let { mode ->
+            // Reset the current section index so setupCurrentIndex will run properly
+            isRefreshing = true
+            currentSectionIndex = -1
+            loadBlocks(mode, currentComponentId, forceRefresh = true)
+        }
+    }
+
+    /**
+     * Check if the tracked prerequisite has been completed.
+     * Only performs API call if we were tracking a prerequisite that was incomplete.
+     * Returns true if prerequisite completion status changed from incomplete to complete.
+     */
+    suspend fun shouldRefreshForPrerequisiteCompletion(): Boolean {
+        // Only check if we were actually viewing locked content with a tracked prerequisite
+        if (!isViewingLockedContent || trackedPrereqId == null || !wasPrereqIncomplete) {
+            return false
+        }
+
+        try {
+            // Fetch fresh data to check completion
+            val courseStructure = when (currentMode) {
+                CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = true)
+                CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
+                else -> return false
+            }
+
+            // Find the prerequisite subsection in fresh data
+            val prereqBlock = courseStructure.blockData.firstOrNull { it.id == trackedPrereqId }
+
+            // Check if it's now complete (completion = 1.0 means all units done)
+            val isNowComplete = prereqBlock?.completion == 1.0
+
+            // Return true only if it changed from incomplete to complete
+            return isNowComplete && wasPrereqIncomplete
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
         }
     }
 
@@ -131,7 +173,8 @@ class CourseUnitContainerViewModel(
     }
 
     private fun setupCurrentIndex(componentId: String = "") {
-        if (currentSectionIndex != -1) return
+        if (currentSectionIndex != -1 && !isRefreshing) return
+        isRefreshing = false
         currentComponentId = componentId
 
         blocks.forEachIndexed { index, block ->
@@ -141,7 +184,20 @@ class CourseUnitContainerViewModel(
                     it.descendants.contains(blocks[currentVerticalIndex].id)
                 }
                 val blockGatedContent = block.gatedContent
-                val isBlockGatedWithPrereq = blockGatedContent?.gated == true && blockGatedContent.prereqId.isNotEmpty()
+                val isBlockGatedWithPrereq = blockGatedContent?.gated == true &&
+                                             blockGatedContent.prereqId.isNotEmpty()
+
+                // Mark if we're viewing locked content (will be used to decide if we need to check completion later)
+                if (isBlockGatedWithPrereq && blockGatedContent != null) {
+                    isViewingLockedContent = true
+                    trackedPrereqId = blockGatedContent.prereqId
+                    val prereqBlock = blocks.firstOrNull { it.id == blockGatedContent.prereqId }
+                    wasPrereqIncomplete = prereqBlock?.completion != 1.0
+                } else {
+                    isViewingLockedContent = false
+                    trackedPrereqId = null
+                    wasPrereqIncomplete = false
+                }
 
                 val firstDescendant = if (!isBlockGatedWithPrereq && block.descendants.isNotEmpty()) {
                     blocks.firstOrNull { it.id == block.descendants.first() }
@@ -150,6 +206,14 @@ class CourseUnitContainerViewModel(
                 val firstDescGatedContent = firstDescendant?.gatedContent
                 val firstDescGatedWithPrereq = firstDescGatedContent?.gated == true &&
                                                firstDescGatedContent.prereqId.isNotEmpty()
+
+                // Also check first descendant for locked content
+                if (firstDescGatedWithPrereq && !isViewingLockedContent && firstDescGatedContent != null) {
+                    isViewingLockedContent = true
+                    trackedPrereqId = firstDescGatedContent.prereqId
+                    val prereqBlock = blocks.firstOrNull { it.id == firstDescGatedContent.prereqId }
+                    wasPrereqIncomplete = prereqBlock?.completion != 1.0
+                }
 
                 if (block.descendants.isNotEmpty() || block.isGated()) {
                     _descendantsBlocks.value =
@@ -163,8 +227,8 @@ class CourseUnitContainerViewModel(
                         _descendantsBlocks.value.isEmpty() || isBlockGatedWithPrereq -> {
                             _descendantsBlocks.value = listOf(block)
                         }
-                        firstDescGatedWithPrereq && firstDescendant != null -> {
-                            _descendantsBlocks.value = listOf(firstDescendant)
+                        firstDescGatedWithPrereq -> {
+                            _descendantsBlocks.value = listOfNotNull(firstDescendant)
                         }
                     }
                 } else {

@@ -575,17 +575,11 @@ private fun PrimaryCourseCard(
                 modifier = Modifier
                     .fillMaxWidth()
             )
-            val progress: Float = try {
-                primaryCourse.progress.assignmentsCompleted.toFloat() /
-                        primaryCourse.progress.totalAssignmentsCount.toFloat()
-            } catch (_: ArithmeticException) {
-                0f
-            }
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),
-                progress = progress,
+                progress = primaryCourse.progress.value,
                 color = MaterialTheme.appColors.primary,
                 backgroundColor = MaterialTheme.appColors.divider
             )

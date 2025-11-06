@@ -3,6 +3,7 @@ package org.openedx.core.domain.model
 import android.os.Parcelable
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
+import org.openedx.core.extension.safeDivBy
 
 @Parcelize
 data class Progress(
@@ -11,11 +12,7 @@ data class Progress(
 ) : Parcelable {
 
     @IgnoredOnParcel
-    val value: Float = try {
-        assignmentsCompleted.toFloat() / totalAssignmentsCount.toFloat()
-    } catch (_: ArithmeticException) {
-        0f
-    }
+    val value: Float = assignmentsCompleted.toFloat().safeDivBy(totalAssignmentsCount.toFloat())
 
     companion object {
         val DEFAULT_PROGRESS = Progress(0, 0)

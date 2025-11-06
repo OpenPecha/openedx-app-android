@@ -84,6 +84,7 @@ import org.openedx.core.domain.model.AssignmentProgress
 import org.openedx.core.domain.model.Block
 import org.openedx.core.domain.model.BlockCounts
 import org.openedx.core.domain.model.CourseDatesBannerInfo
+import org.openedx.core.extension.safeDivBy
 import org.openedx.core.module.db.DownloadModel
 import org.openedx.core.module.db.DownloadedState
 import org.openedx.core.module.db.FileType
@@ -260,11 +261,7 @@ fun OfflineQueueCard(
                 maxLines = 1
             )
 
-            val progress = if (progressSize == 0L) {
-                0f
-            } else {
-                progressValue.toFloat() / progressSize
-            }
+            val progress = progressValue.toFloat().safeDivBy(progressSize.toFloat())
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()

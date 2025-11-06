@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.openedx.core.BlockType
 import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.domain.model.Block
+import org.openedx.core.extension.safeDivBy
 import org.openedx.core.module.DownloadWorkerController
 import org.openedx.core.module.db.DownloadDao
 import org.openedx.core.module.db.DownloadModel
@@ -187,19 +188,25 @@ class CourseOfflineViewModel(
         completedDownloads: List<DownloadModel>,
         downloadedBlocks: List<Block>
     ) {
-        val downloadedSize = getFilesSize(downloadedBlocks)
+        val downloadedSize = getFilesSize(downloadedBlocks).toFloat()
         val realDownloadedSize = completedDownloads.sumOf { it.size }
         val largestDownloads = completedDownloads
             .sortedByDescending { it.size }
             .take(n = 5)
+        val progressBarValue = downloadedSize.safeDivBy(totalDownloadableSize.toFloat())
+        val readyToDownloadSize = if (progressBarValue >= 1) {
+            0
+        } else {
+            totalDownloadableSize - realDownloadedSize
+        }
 
         _uiState.update {
             it.copy(
                 isHaveDownloadableBlocks = true,
                 largestDownloads = largestDownloads,
-                readyToDownloadSize = (totalDownloadableSize - downloadedSize).toFileSize(1, false),
+                readyToDownloadSize = readyToDownloadSize.toFileSize(1, false),
                 downloadedSize = realDownloadedSize.toFileSize(1, false),
-                progressBarValue = downloadedSize.toFloat() / totalDownloadableSize.toFloat()
+                progressBarValue = progressBarValue
             )
         }
     }

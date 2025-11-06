@@ -432,16 +432,11 @@ fun CourseItem(
                         .fillMaxWidth()
                         .aspectRatio(16f / 9f)
                 )
-                val progress: Float = try {
-                    course.progress.assignmentsCompleted.toFloat() / course.progress.totalAssignmentsCount.toFloat()
-                } catch (_: ArithmeticException) {
-                    0f
-                }
                 LinearProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp),
-                    progress = progress,
+                    progress = course.progress.value,
                     color = MaterialTheme.appColors.primary,
                     backgroundColor = MaterialTheme.appColors.divider
                 )

@@ -94,6 +94,13 @@ class CourseSectionFragment : Fragment() {
         viewModel.getBlocks(subSectionId, viewModel.mode)
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh from cache when returning to this screen to update lock icons
+        val subSectionId = requireArguments().getString(ARG_SUBSECTION_ID, "")
+        viewModel.updateBlocksFromCacheIfNeeded(subSectionId, viewModel.mode)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,

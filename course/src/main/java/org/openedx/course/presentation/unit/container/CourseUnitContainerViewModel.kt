@@ -123,9 +123,9 @@ class CourseUnitContainerViewModel(
     }
 
     /**
-     * Check if the tracked prerequisite has been completed.
+     * Check if the tracked prerequisite requirement has been met.
      * Only performs API call if we were tracking a prerequisite that was incomplete.
-     * Returns true if prerequisite completion status changed from incomplete to complete.
+     * Returns true if the gated status changed from gated to ungated (backend determines this).
      */
     suspend fun shouldRefreshForPrerequisiteCompletion(): Boolean {
         // Only check if we were actually viewing locked content with a tracked prerequisite
@@ -134,21 +134,24 @@ class CourseUnitContainerViewModel(
         }
 
         try {
-            // Fetch fresh data to check completion
+            // Fetch fresh data to check if prerequisite is now met
             val courseStructure = when (currentMode) {
                 CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = true)
                 CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
                 else -> return false
             }
 
-            // Find the prerequisite subsection in fresh data
-            val prereqBlock = courseStructure.blockData.firstOrNull { it.id == trackedPrereqId }
+            // Find the current block (the one that was locked) in fresh data
+            val currentBlock = courseStructure.blockData.firstOrNull { block ->
+                block.descendants.contains(unitId) && block.type == BlockType.SEQUENTIAL
+            }
 
-            // Check if it's now complete (completion = 1.0 means all units done)
-            val isNowComplete = prereqBlock?.completion == 1.0
+            // Check if it's still gated according to backend
+            // Backend sets gated=false when prerequisite requirements are met
+            val isStillGated = currentBlock?.gatedContent?.gated == true
 
-            // Return true only if it changed from incomplete to complete
-            return isNowComplete && wasPrereqIncomplete
+            // Return true only if it changed from gated to ungated
+            return !isStillGated && wasPrereqIncomplete
         } catch (e: Exception) {
             e.printStackTrace()
             return false

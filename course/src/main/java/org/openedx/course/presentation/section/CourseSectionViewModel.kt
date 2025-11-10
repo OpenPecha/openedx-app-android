@@ -11,6 +11,7 @@ import org.openedx.core.domain.model.Block
 import org.openedx.core.presentation.course.CourseViewMode
 import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseSectionChanged
+import org.openedx.core.system.notifier.CourseStructureUpdated
 import org.openedx.course.domain.interactor.CourseInteractor
 import org.openedx.course.presentation.CourseAnalytics
 import org.openedx.course.presentation.CourseAnalyticsEvent
@@ -38,35 +39,93 @@ class CourseSectionViewModel(
         get() = _uiMessage
 
     var mode = CourseViewMode.FULL
+    private var currentBlockId: String? = null
+    private var isRefreshing = false
+    private var isFirstLoad = true
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
         viewModelScope.launch {
             notifier.notifier.collect { event ->
-                if (event is CourseSectionChanged) {
-                    getBlocks(event.blockId, mode)
+                when (event) {
+                    is CourseSectionChanged -> {
+                        getBlocks(event.blockId, mode)
+                    }
+                    is CourseStructureUpdated -> {
+                        if (event.courseId == courseId && currentBlockId != null) {
+                            updateBlocksFromCache(currentBlockId!!, mode)
+                        }
+                    }
                 }
             }
         }
     }
 
-    fun getBlocks(blockId: String, mode: CourseViewMode) {
+    fun updateBlocksFromCacheIfNeeded(blockId: String, mode: CourseViewMode) {
+        if (isFirstLoad) {
+            isFirstLoad = false
+            return
+        }
+
+        if (!isRefreshing) {
+            updateBlocksFromCache(blockId, mode)
+        }
+    }
+
+    private fun updateBlocksFromCache(blockId: String, mode: CourseViewMode) {
+        if (isRefreshing) {
+            return
+        }
+
+        isRefreshing = true
+
+        viewModelScope.launch {
+            try {
+                val courseStructure = interactor.getCourseStructureFromCache(courseId)
+                val blocks = courseStructure.blockData
+                val newList = getDescendantBlocks(blocks, blockId)
+                val sequentialBlock = getSequentialBlock(blocks, blockId)
+
+                val updatedBlocks = ArrayList(newList)
+
+                _uiState.value = CourseSectionUIState.Blocks(
+                    blocks = updatedBlocks,
+                    courseName = courseStructure.name,
+                    sectionName = sequentialBlock.displayName
+                )
+            } catch (e: Exception) {
+                getBlocks(blockId, mode, forceRefresh = true)
+            } finally {
+                isRefreshing = false
+            }
+        }
+    }
+
+    fun getBlocks(blockId: String, mode: CourseViewMode, forceRefresh: Boolean = false) {
+        if (isRefreshing && !forceRefresh) {
+            return
+        }
+
+        currentBlockId = blockId
+        isRefreshing = true
         _uiState.value = CourseSectionUIState.Loading
         viewModelScope.launch {
             try {
                 val courseStructure = when (mode) {
-                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId)
-                    CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
+                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = forceRefresh)
+                    CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId, isNeedRefresh = forceRefresh)
                 }
                 val blocks = courseStructure.blockData
                 val newList = getDescendantBlocks(blocks, blockId)
                 val sequentialBlock = getSequentialBlock(blocks, blockId)
-                _uiState.value =
-                    CourseSectionUIState.Blocks(
-                        blocks = ArrayList(newList),
-                        courseName = courseStructure.name,
-                        sectionName = sequentialBlock.displayName
-                    )
+
+                val updatedBlocks = ArrayList(newList)
+
+                _uiState.value = CourseSectionUIState.Blocks(
+                    blocks = updatedBlocks,
+                    courseName = courseStructure.name,
+                    sectionName = sequentialBlock.displayName
+                )
             } catch (e: Exception) {
                 if (e.isInternetError()) {
                     _uiMessage.value =
@@ -75,6 +134,8 @@ class CourseSectionViewModel(
                     _uiMessage.value =
                         UIMessage.SnackBarMessage(resourceManager.getString(R.string.core_error_unknown_error))
                 }
+            } finally {
+                isRefreshing = false
             }
         }
     }

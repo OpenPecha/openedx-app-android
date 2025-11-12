@@ -133,6 +133,14 @@ class CourseUnitContainerViewModel(
                 courseName = courseStructure.name
                 this@CourseUnitContainerViewModel.blocks.clearAndAddAll(blocks)
                 setupCurrentIndex(componentId)
+
+                // Explicitly update subSectionUnitBlocks after refresh to ensure
+                // lock icons update when prerequisite status changes
+                if (blocks.isNotEmpty() && currentVerticalIndex != -1) {
+                    val blockId = blocks[currentVerticalIndex].id
+                    _subSectionUnitBlocks.value =
+                        getSubSectionUnitBlocks(blocks, getSubSectionId(blockId))
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }

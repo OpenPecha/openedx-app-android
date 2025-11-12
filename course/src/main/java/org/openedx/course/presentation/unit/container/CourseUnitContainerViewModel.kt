@@ -181,6 +181,14 @@ class CourseUnitContainerViewModel(
         }
     }
 
+    /**
+     * Returns true if we're currently viewing prerequisite-locked content.
+     * Used to determine if we should refresh data when resuming.
+     */
+    fun checkIsViewingLockedContent(): Boolean {
+        return isViewingLockedContent
+    }
+
     init {
         _indexInContainer.value = 0
 

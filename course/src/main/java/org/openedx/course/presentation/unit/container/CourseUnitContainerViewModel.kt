@@ -99,8 +99,34 @@ class CourseUnitContainerViewModel(
         currentMode = mode
         viewModelScope.launch {
             try {
+                // First, check if we need to force refresh for prerequisite-gated content
+                var shouldForceRefresh = forceRefresh
+
+                if (!forceRefresh) {
+                    // Check if the unit we're loading has gatedContent (prerequisite-related)
+                    // If so, always refresh to get the latest lock status
+                    val preliminaryStructure = when (mode) {
+                        CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = false)
+                        CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
+                    }
+
+                    val targetBlock = preliminaryStructure.blockData.firstOrNull { it.id == unitId }
+
+                    // Check if this block or its first descendant has prerequisite gatedContent
+                    val hasGatedContent = targetBlock?.gatedContent != null
+                    val firstDescendant = if (targetBlock?.descendants?.isNotEmpty() == true) {
+                        preliminaryStructure.blockData.firstOrNull { it.id == targetBlock.descendants.first() }
+                    } else null
+                    val firstDescHasGatedContent = firstDescendant?.gatedContent != null
+
+                    if (hasGatedContent || firstDescHasGatedContent) {
+                        // Force refresh to ensure we have the latest lock status
+                        shouldForceRefresh = true
+                    }
+                }
+
                 val courseStructure = when (mode) {
-                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = forceRefresh)
+                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = shouldForceRefresh)
                     CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
                 }
                 val blocks = courseStructure.blockData

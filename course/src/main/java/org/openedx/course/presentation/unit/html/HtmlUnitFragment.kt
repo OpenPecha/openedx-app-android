@@ -38,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -98,7 +97,12 @@ class HtmlUnitFragment : Fragment() {
                 blockUrl = blockUrl,
                 offlineUrl = offlineUrl,
                 fromDownloadedContent = fromDownloadedContent,
-                isFragmentAdded = isAdded
+                isFragmentAdded = isAdded,
+                onPrerequisiteLocked = { prereqId, prereqSectionName ->
+                    // Navigate to parent and trigger refresh
+                    // The CourseUnitContainerFragment will handle showing PrerequisiteLockedFragment
+                    activity?.supportFragmentManager?.popBackStack()
+                }
             )
         }
     }
@@ -136,6 +140,7 @@ fun HtmlUnitView(
     offlineUrl: String,
     fromDownloadedContent: Boolean,
     isFragmentAdded: Boolean,
+    onPrerequisiteLocked: (prereqId: String, prereqSectionName: String) -> Unit = { _, _ -> },
 ) {
     OpenEdXTheme {
         val context = LocalContext.current
@@ -200,6 +205,8 @@ fun HtmlUnitView(
                             apiHostURL = viewModel.apiHostURL,
                             isLoading = uiState is HtmlUnitUIState.Loading,
                             injectJSList = injectJSList,
+                            viewModel = viewModel,
+                            onPrerequisiteLocked = onPrerequisiteLocked,
                             onCompletionSet = {
                                 viewModel.notifyCompletionSet()
                             },
@@ -254,6 +261,8 @@ private fun HTMLContentView(
     apiHostURL: String,
     isLoading: Boolean,
     injectJSList: List<String>,
+    viewModel: HtmlUnitViewModel,
+    onPrerequisiteLocked: (prereqId: String, prereqSectionName: String) -> Unit,
     onCompletionSet: () -> Unit,
     onWebPageLoading: () -> Unit,
     onWebPageLoaded: () -> Unit,
@@ -319,9 +328,29 @@ private fun HTMLContentView(
                         request: WebResourceRequest?
                     ): Boolean {
                         val clickUrl = request?.url?.toString() ?: ""
+
+                        // Check if the current block is prerequisite-locked
+                        coroutineScope.launch {
+                            val block = viewModel.getBlockData()
+                            val gatedContent = block?.gatedContent
+
+                            if (gatedContent?.gated == true && !gatedContent.prereqId.isNullOrEmpty()) {
+                                // Content is prerequisite-locked, trigger callback to navigate away
+                                onPrerequisiteLocked(
+                                    gatedContent.prereqId ?: "",
+                                    gatedContent.prereqSectionName ?: ""
+                                )
+                            }
+                        }
+
                         return if (clickUrl.isNotEmpty() && clickUrl.startsWith("http")) {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl)))
-                            true
+                            if (clickUrl.startsWith(apiHostURL)) {
+                                // Allow internal course content links to load in WebView
+                                false
+                            } else {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl)))
+                                true
+                            }
                         } else if (clickUrl.startsWith("mailto:")) {
                             val email = clickUrl.replace("mailto:", "")
                             if (email.isEmailValid()) {

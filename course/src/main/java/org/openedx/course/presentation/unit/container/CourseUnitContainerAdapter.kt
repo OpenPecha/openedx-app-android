@@ -37,10 +37,6 @@ class CourseUnitContainerAdapter(
                 createPrerequisiteLockedFragment(block)
             }
 
-            block.containsGatedContent && block.gatedContent == null -> {
-                createNotAvailableUnitFragment(block, NotAvailableUnitType.MOBILE_UNSUPPORTED)
-            }
-
             isBlockNotDownloaded(block, noNetwork, offlineUrl) -> {
                 createNotAvailableUnitFragment(block, NotAvailableUnitType.NOT_DOWNLOADED)
             }

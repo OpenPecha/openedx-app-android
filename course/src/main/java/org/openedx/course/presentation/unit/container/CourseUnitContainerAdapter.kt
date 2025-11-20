@@ -27,6 +27,24 @@ class CourseUnitContainerAdapter(
 
     fun getBlock(position: Int): Block = blocks[position]
 
+    // Override getItemId to use block ID as unique identifier
+    // This ensures fragments are recreated when block gated status changes
+    override fun getItemId(position: Int): Long {
+        val block = blocks[position]
+        // Create a unique ID based on block ID and its gated status
+        // This forces fragment recreation when gated status changes
+        val gatedSuffix = if (isBlockGatedWithPrerequisite(block)) "_gated" else "_open"
+        return (block.id + gatedSuffix).hashCode().toLong()
+    }
+
+    // Override containsItem to check if block still exists
+    override fun containsItem(itemId: Long): Boolean {
+        return blocks.any { block ->
+            val gatedSuffix = if (isBlockGatedWithPrerequisite(block)) "_gated" else "_open"
+            (block.id + gatedSuffix).hashCode().toLong() == itemId
+        }
+    }
+
     private fun unitBlockFragment(block: Block): Fragment {
         val downloadedModel = viewModel.getDownloadModelById(block.id)
         val offlineUrl = downloadedModel?.let { it.path + File.separator + "index.html" } ?: ""

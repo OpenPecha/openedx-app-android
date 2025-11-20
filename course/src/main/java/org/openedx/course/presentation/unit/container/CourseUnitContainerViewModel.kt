@@ -103,8 +103,7 @@ class CourseUnitContainerViewModel(
                 var shouldForceRefresh = forceRefresh
 
                 if (!forceRefresh) {
-                    // Check if the unit we're loading has gatedContent (prerequisite-related)
-                    // If so, always refresh to get the latest lock status
+                    // Get preliminary structure to check block type
                     val preliminaryStructure = when (mode) {
                         CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = false)
                         CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
@@ -112,15 +111,34 @@ class CourseUnitContainerViewModel(
 
                     val targetBlock = preliminaryStructure.blockData.firstOrNull { it.id == unitId }
 
-                    // Check if this block or its first descendant has prerequisite gatedContent
+                    // Check if this block or its first descendant could be gated
+                    // We check both gatedContent presence AND block type, because:
+                    // 1. If gatedContent exists, we know it's related to prerequisites
+                    // 2. If it's a problem/assessment block, it COULD become gated after wrong answers
                     val hasGatedContent = targetBlock?.gatedContent != null
+                    val couldBeGated = targetBlock?.let { block ->
+                        block.isProblemBlock ||
+                        block.isOpenAssessmentBlock ||
+                        block.isLTIConsumerBlock ||
+                        block.isSurveyBlock
+                    } ?: false
+
                     val firstDescendant = if (targetBlock?.descendants?.isNotEmpty() == true) {
                         preliminaryStructure.blockData.firstOrNull { it.id == targetBlock.descendants.first() }
                     } else null
                     val firstDescHasGatedContent = firstDescendant?.gatedContent != null
+                    val firstDescCouldBeGated = firstDescendant?.let { block ->
+                        block.isProblemBlock ||
+                        block.isOpenAssessmentBlock ||
+                        block.isLTIConsumerBlock ||
+                        block.isSurveyBlock
+                    } ?: false
 
-                    if (hasGatedContent || firstDescHasGatedContent) {
-                        // Force refresh to ensure we have the latest lock status
+                    // Force refresh if:
+                    // - Block has gatedContent (we know it's related to prerequisites)
+                    // - Block is a type that could be gated (problem, assessment, etc.)
+                    if (hasGatedContent || couldBeGated || firstDescHasGatedContent || firstDescCouldBeGated) {
+                        // Force refresh to ensure we have the latest lock status from backend
                         shouldForceRefresh = true
                     }
                 }

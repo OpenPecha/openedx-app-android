@@ -380,14 +380,14 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         super.onResume()
         activity?.onBackPressedDispatcher?.addCallback(onBackPressedCallback)
 
-        // Only check prerequisite completion if:
-        // 1. We were viewing locked content
-        // 2. There was a tracked prerequisite
-        // 3. That prerequisite was incomplete when we first loaded
-        // This ensures we only make API calls when there's a real possibility of completion
+        // Refresh if we're viewing locked content, to ensure we have the latest lock status
+        // This handles the case where user completes prerequisite and navigates back
         lifecycleScope.launch {
-            if (viewModel.shouldRefreshForPrerequisiteCompletion()) {
-                // The prerequisite subsection is now fully complete, refresh data
+            if (viewModel.checkIsViewingLockedContent()) {
+                // Always refresh when viewing locked content to check if it's now unlocked
+                viewModel.refreshCourseData()
+            } else if (viewModel.shouldRefreshForPrerequisiteCompletion()) {
+                // Fallback: check if prerequisite was completed (for other scenarios)
                 viewModel.refreshCourseData()
             }
         }

@@ -34,6 +34,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -113,7 +114,12 @@ class HtmlUnitFragment : Fragment() {
                 offlineUrl = offlineUrl,
                 fromDownloadedContent = fromDownloadedContent,
                 isFragmentAdded = isAdded,
-                onShowFileChooser = ::openFileChooser
+                onShowFileChooser = ::openFileChooser,
+                onPrerequisiteLocked = { _, _ ->
+                    // Fallback: if somehow HtmlUnitFragment loaded with gated content, navigate back
+                    // This should rarely happen now that we force API refresh for problem blocks
+                    activity?.supportFragmentManager?.popBackStack()
+                }
             )
         }
     }
@@ -224,10 +230,21 @@ fun HtmlUnitView(
     fromDownloadedContent: Boolean,
     isFragmentAdded: Boolean,
     onShowFileChooser: (ValueCallback<Array<Uri>>, WebChromeClient.FileChooserParams?) -> Boolean,
+    onPrerequisiteLocked: (prereqId: String, prereqSectionName: String) -> Unit = { _, _ -> },
 ) {
     OpenEdXTheme {
         val context = LocalContext.current
         val windowSize = rememberWindowSize()
+
+        // Get block data and check if it's gated
+        var isBlockGated by remember { mutableStateOf(false) }
+
+        // Check block status on composition
+        LaunchedEffect(Unit) {
+            val block = viewModel.getBlockData()
+            isBlockGated = block?.gatedContent?.gated == true &&
+                          !block.gatedContent?.prereqId.isNullOrEmpty()
+        }
 
         var hasInternetConnection by remember {
             mutableStateOf(viewModel.isOnline)
@@ -288,6 +305,9 @@ fun HtmlUnitView(
                             apiHostURL = viewModel.apiHostURL,
                             isLoading = uiState is HtmlUnitUIState.Loading,
                             injectJSList = injectJSList,
+                            viewModel = viewModel,
+                            isBlockGated = isBlockGated,
+                            onPrerequisiteLocked = onPrerequisiteLocked,
                             onCompletionSet = {
                                 viewModel.notifyCompletionSet()
                             },
@@ -343,6 +363,9 @@ private fun HTMLContentView(
     apiHostURL: String,
     isLoading: Boolean,
     injectJSList: List<String>,
+    viewModel: HtmlUnitViewModel,
+    isBlockGated: Boolean,
+    onPrerequisiteLocked: (prereqId: String, prereqSectionName: String) -> Unit,
     onCompletionSet: () -> Unit,
     onWebPageLoading: () -> Unit,
     onWebPageLoaded: () -> Unit,
@@ -418,9 +441,33 @@ private fun HTMLContentView(
                         request: WebResourceRequest?
                     ): Boolean {
                         val clickUrl = request?.url?.toString() ?: ""
+
+                        // If block is gated with prerequisite, check and show locked fragment instead of browser
+                        if (isBlockGated) {
+                            coroutineScope.launch {
+                                val block = viewModel.getBlockData()
+                                val gatedContent = block?.gatedContent
+
+                                if (gatedContent?.gated == true && !gatedContent.prereqId.isNullOrEmpty()) {
+                                    // Content is prerequisite-locked, trigger callback to show locked fragment
+                                    onPrerequisiteLocked(
+                                        gatedContent.prereqId ?: "",
+                                        gatedContent.prereqSectionName ?: ""
+                                    )
+                                }
+                            }
+                            // Don't allow any redirects for gated content
+                            return true
+                        }
+
                         return if (clickUrl.isNotEmpty() && clickUrl.startsWith("http")) {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl)))
-                            true
+                            if (clickUrl.startsWith(apiHostURL)) {
+                                // Allow internal course content links to load in WebView
+                                false
+                            } else {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl)))
+                                true
+                            }
                         } else if (clickUrl.startsWith("mailto:")) {
                             val email = clickUrl.replace("mailto:", "")
                             if (email.isEmailValid()) {

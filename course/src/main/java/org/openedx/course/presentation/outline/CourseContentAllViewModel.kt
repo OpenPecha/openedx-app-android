@@ -220,12 +220,16 @@ class CourseContentAllViewModel(
             (_uiState.value as? CourseContentAllUIState.CourseData)?.courseSectionsState
                 ?: blocks.getChapterBlocks().associate { it.id to !it.isCompleted() }
 
+        // Create immutable copy of courseSubSections so Compose detects changes
+        // This is important for updating lock icons when prerequisite status changes
+        val courseSubSectionsCopy = courseSubSections.toMap()
+
         _uiState.value = CourseContentAllUIState.CourseData(
             courseStructure = sortedStructure,
             downloadedState = getDownloadModelsStatus(),
             resumeComponent = getResumeBlock(blocks, courseStatus.lastVisitedBlockId),
             resumeUnitTitle = resumeVerticalBlock?.displayName ?: "",
-            courseSubSections = courseSubSections,
+            courseSubSections = courseSubSectionsCopy,
             courseSectionsState = courseSectionsState,
             subSectionsDownloadsCount = subSectionsDownloadsCount,
             useRelativeDates = preferencesManager.isRelativeDatesEnabled

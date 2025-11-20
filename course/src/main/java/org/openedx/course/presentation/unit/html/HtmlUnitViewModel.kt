@@ -113,4 +113,11 @@ class HtmlUnitViewModel(
             }
         }
     }
+
+    suspend fun getBlockData() = try {
+        courseInteractor.getCourseStructure(courseId, false)
+            .blockData.find { it.id == blockId }
+    } catch (e: Exception) {
+        null
+    }
 }

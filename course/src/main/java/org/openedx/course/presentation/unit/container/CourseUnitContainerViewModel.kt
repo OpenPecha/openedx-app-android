@@ -99,14 +99,66 @@ class CourseUnitContainerViewModel(
         currentMode = mode
         viewModelScope.launch {
             try {
+                // First, check if we need to force refresh for prerequisite-gated content
+                var shouldForceRefresh = forceRefresh
+
+                if (!forceRefresh) {
+                    // Get preliminary structure to check block type
+                    val preliminaryStructure = when (mode) {
+                        CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = false)
+                        CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
+                    }
+
+                    val targetBlock = preliminaryStructure.blockData.firstOrNull { it.id == unitId }
+
+                    // Check if this block or its first descendant could be gated
+                    // We check both gatedContent presence AND block type, because:
+                    // 1. If gatedContent exists, we know it's related to prerequisites
+                    // 2. If it's a problem/assessment block, it COULD become gated after wrong answers
+                    val hasGatedContent = targetBlock?.gatedContent != null
+                    val couldBeGated = targetBlock?.let { block ->
+                        block.isProblemBlock ||
+                        block.isOpenAssessmentBlock ||
+                        block.isLTIConsumerBlock ||
+                        block.isSurveyBlock
+                    } ?: false
+
+                    val firstDescendant = if (targetBlock?.descendants?.isNotEmpty() == true) {
+                        preliminaryStructure.blockData.firstOrNull { it.id == targetBlock.descendants.first() }
+                    } else null
+                    val firstDescHasGatedContent = firstDescendant?.gatedContent != null
+                    val firstDescCouldBeGated = firstDescendant?.let { block ->
+                        block.isProblemBlock ||
+                        block.isOpenAssessmentBlock ||
+                        block.isLTIConsumerBlock ||
+                        block.isSurveyBlock
+                    } ?: false
+
+                    // Force refresh if:
+                    // - Block has gatedContent (we know it's related to prerequisites)
+                    // - Block is a type that could be gated (problem, assessment, etc.)
+                    if (hasGatedContent || couldBeGated || firstDescHasGatedContent || firstDescCouldBeGated) {
+                        // Force refresh to ensure we have the latest lock status from backend
+                        shouldForceRefresh = true
+                    }
+                }
+
                 val courseStructure = when (mode) {
-                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = forceRefresh)
+                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = shouldForceRefresh)
                     CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
                 }
                 val blocks = courseStructure.blockData
                 courseName = courseStructure.name
                 this@CourseUnitContainerViewModel.blocks.clearAndAddAll(blocks)
                 setupCurrentIndex(componentId)
+
+                // Explicitly update subSectionUnitBlocks after refresh to ensure
+                // lock icons update when prerequisite status changes
+                if (blocks.isNotEmpty() && currentVerticalIndex != -1) {
+                    val blockId = blocks[currentVerticalIndex].id
+                    _subSectionUnitBlocks.value =
+                        getSubSectionUnitBlocks(blocks, getSubSectionId(blockId))
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -153,6 +205,14 @@ class CourseUnitContainerViewModel(
             e.printStackTrace()
             return false
         }
+    }
+
+    /**
+     * Returns true if we're currently viewing prerequisite-locked content.
+     * Used to determine if we should refresh data when resuming.
+     */
+    fun checkIsViewingLockedContent(): Boolean {
+        return isViewingLockedContent
     }
 
     init {

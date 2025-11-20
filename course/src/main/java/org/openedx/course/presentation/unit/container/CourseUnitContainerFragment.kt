@@ -159,6 +159,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         setupSubSectionUnits()
         checkUnitsListShown()
         setupChapterEndDialogListener()
+        observeDataChanges()
     }
 
     private fun setupViewPagerInsets() {
@@ -325,6 +326,55 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
     override fun onResume() {
         super.onResume()
         activity?.onBackPressedDispatcher?.addCallback(onBackPressedCallback)
+
+        // Refresh if we're viewing locked content, to ensure we have the latest lock status
+        // This handles the case where user completes prerequisite and navigates back
+        lifecycleScope.launch {
+            if (viewModel.checkIsViewingLockedContent()) {
+                // Always refresh when viewing locked content to check if it's now unlocked
+                viewModel.refreshCourseData()
+            } else if (viewModel.shouldRefreshForPrerequisiteCompletion()) {
+                // Fallback: check if prerequisite was completed (for other scenarios)
+                viewModel.refreshCourseData()
+            }
+        }
+    }
+
+    private fun observeDataChanges() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.descendantsBlocks.collect { blocks ->
+                if (blocks.isNotEmpty() && ::adapter.isInitialized) {
+                    val wasShowingLockedContent = adapter.itemCount == 1 &&
+                            adapter.getBlock(0).let { block ->
+                                block.gatedContent?.gated == true ||
+                                (block.type == BlockType.VERTICAL && block.descendants.isEmpty())
+                            }
+
+                    // Update adapter when blocks change (e.g., after refreshing from prerequisite)
+                    adapter = CourseUnitContainerAdapter(this@CourseUnitContainerFragment, blocks, viewModel)
+                    binding.viewPager.adapter = adapter
+
+                    // If we were showing locked content and now have unlocked content, navigate to it
+                    if (wasShowingLockedContent && blocks.size > 1) {
+                        // Content is now unlocked, set to first item
+                        binding.viewPager.setCurrentItem(0, true)
+                    } else if (wasShowingLockedContent && blocks.size == 1) {
+                        // Check if the single block is no longer locked
+                        val currentBlock = blocks[0]
+                        val isStillLocked = currentBlock.gatedContent?.gated == true
+                        if (!isStillLocked && currentBlock.descendants.isNotEmpty()) {
+                            // Content is now unlocked, navigate to the actual content
+                            router.navigateToCourseContainer(
+                                fm = requireActivity().supportFragmentManager,
+                                courseId = viewModel.courseId,
+                                unitId = currentBlock.id,
+                                mode = requireArguments().serializable(ARG_MODE)!!
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onPause() {
@@ -422,7 +472,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
     }
 
     private fun handleUnitsClick() {
-        if (binding.subSectionUnitsList.visibility == View.VISIBLE) {
+        if (binding.subSectionUnitsList.isVisible) {
             binding.subSectionUnitsList.visibility = View.GONE
             binding.subSectionUnitsBg.visibility = View.GONE
             viewModel.setUnitsListVisibility(false)
@@ -452,26 +502,33 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                 hasNextBlock = hasNext
             }
 
-            NavigationUnitsButtons(
-                hasPrevBlock = hasPrevBlock,
-                nextButtonText = nextButtonText,
-                hasNextBlock = hasNextBlock,
-                isVerticalNavigation = !viewModel.isCourseUnitProgressEnabled,
-                onPrevClick = {
-                    handlePrevClick { next, hasPrev, hasNext ->
-                        nextButtonText = next
-                        hasPrevBlock = hasPrev
-                        hasNextBlock = hasNext
+            val currentIndex by viewModel.indexInContainer.observeAsState(0)
+            val descendantsBlocks by viewModel.descendantsBlocks.collectAsState()
+            val currentDisplayedBlock = descendantsBlocks.getOrNull(currentIndex)
+            val isContentLocked = currentDisplayedBlock?.isGated() ?: false
+
+            if (!isContentLocked) {
+                NavigationUnitsButtons(
+                    hasPrevBlock = hasPrevBlock,
+                    nextButtonText = nextButtonText,
+                    hasNextBlock = hasNextBlock,
+                    isVerticalNavigation = !viewModel.isCourseUnitProgressEnabled,
+                    onPrevClick = {
+                        handlePrevClick { next, hasPrev, hasNext ->
+                            nextButtonText = next
+                            hasPrevBlock = hasPrev
+                            hasNextBlock = hasNext
+                        }
+                    },
+                    onNextClick = {
+                        handleNextClick { next, hasPrev, hasNext ->
+                            nextButtonText = next
+                            hasPrevBlock = hasPrev
+                            hasNextBlock = hasNext
+                        }
                     }
-                },
-                onNextClick = {
-                    handleNextClick { next, hasPrev, hasNext ->
-                        nextButtonText = next
-                        hasPrevBlock = hasPrev
-                        hasNextBlock = hasNext
-                    }
-                }
-            )
+                )
+            }
         }
     }
 

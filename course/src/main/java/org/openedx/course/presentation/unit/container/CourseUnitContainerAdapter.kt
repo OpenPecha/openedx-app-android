@@ -7,6 +7,7 @@ import org.openedx.core.domain.model.Block
 import org.openedx.core.module.db.DownloadModel
 import org.openedx.course.presentation.unit.NotAvailableUnitFragment
 import org.openedx.course.presentation.unit.NotAvailableUnitType
+import org.openedx.course.presentation.unit.PrerequisiteLockedFragment
 import org.openedx.course.presentation.unit.html.HtmlUnitFragment
 import org.openedx.course.presentation.unit.video.VideoUnitFragment
 import org.openedx.course.presentation.unit.video.YoutubeVideoUnitFragment
@@ -24,12 +25,36 @@ class CourseUnitContainerAdapter(
 
     override fun createFragment(position: Int): Fragment = unitBlockFragment(blocks[position])
 
+    fun getBlock(position: Int): Block = blocks[position]
+
+    // Override getItemId to use block ID as unique identifier
+    // This ensures fragments are recreated when block gated status changes
+    override fun getItemId(position: Int): Long {
+        val block = blocks[position]
+        // Create a unique ID based on block ID and its gated status
+        // This forces fragment recreation when gated status changes
+        val gatedSuffix = if (isBlockGatedWithPrerequisite(block)) "_gated" else "_open"
+        return (block.id + gatedSuffix).hashCode().toLong()
+    }
+
+    // Override containsItem to check if block still exists
+    override fun containsItem(itemId: Long): Boolean {
+        return blocks.any { block ->
+            val gatedSuffix = if (isBlockGatedWithPrerequisite(block)) "_gated" else "_open"
+            (block.id + gatedSuffix).hashCode().toLong() == itemId
+        }
+    }
+
     private fun unitBlockFragment(block: Block): Fragment {
         val downloadedModel = viewModel.getDownloadModelById(block.id)
         val offlineUrl = downloadedModel?.let { it.path + File.separator + "index.html" } ?: ""
         val noNetwork = !viewModel.hasNetworkConnection
 
         return when {
+            isBlockGatedWithPrerequisite(block) -> {
+                createPrerequisiteLockedFragment(block)
+            }
+
             isBlockNotDownloaded(block, noNetwork, offlineUrl) -> {
                 createNotAvailableUnitFragment(block, NotAvailableUnitType.NOT_DOWNLOADED)
             }
@@ -83,6 +108,11 @@ class CourseUnitContainerAdapter(
                 block.isWordCloudBlock ||
                 block.isLTIConsumerBlock ||
                 block.isSurveyBlock
+    }
+
+    private fun isBlockGatedWithPrerequisite(block: Block): Boolean {
+        val gatedContent = block.gatedContent
+        return gatedContent?.gated == true && gatedContent.prereqId.isNotEmpty()
     }
 
     private fun createHtmlUnitFragment(
@@ -144,6 +174,16 @@ class CourseUnitContainerAdapter(
             block.displayName,
             FragmentViewType.MAIN_CONTENT.name,
             block.id
+        )
+    }
+
+    private fun createPrerequisiteLockedFragment(block: Block): Fragment {
+        val gatedContent = block.gatedContent
+        return PrerequisiteLockedFragment.newInstance(
+            courseId = viewModel.courseId,
+            prereqId = gatedContent?.prereqId.orEmpty(),
+            prereqSectionName = gatedContent?.prereqSectionName.orEmpty(),
+            mode = viewModel.mode
         )
     }
 }

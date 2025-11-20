@@ -39,6 +39,13 @@ class CourseUnitContainerViewModel(
 
     private val blocks = ArrayList<Block>()
 
+    private var isRefreshing = false
+
+    // Track when we're viewing locked content due to prerequisites
+    private var isViewingLockedContent = false
+    private var trackedPrereqId: String? = null
+    private var wasPrereqIncomplete = false
+
     val isCourseExpandableSectionsEnabled get() = config.getCourseUIConfig().isCourseDropdownNavigationEnabled
 
     val isCourseUnitProgressEnabled get() = config.getCourseUIConfig().isCourseUnitProgressEnabled
@@ -76,6 +83,9 @@ class CourseUnitContainerViewModel(
     var hasNextBlock = false
 
     private var currentMode: CourseViewMode? = null
+    val mode: CourseViewMode
+        get() = currentMode ?: CourseViewMode.FULL
+
     private var currentComponentId = ""
     private var courseName = ""
 
@@ -85,23 +95,124 @@ class CourseUnitContainerViewModel(
     val hasNetworkConnection: Boolean
         get() = networkConnection.isOnline()
 
-    fun loadBlocks(mode: CourseViewMode, componentId: String = "") {
+    fun loadBlocks(mode: CourseViewMode, componentId: String = "", forceRefresh: Boolean = false) {
         currentMode = mode
         viewModelScope.launch {
             try {
+                // First, check if we need to force refresh for prerequisite-gated content
+                var shouldForceRefresh = forceRefresh
+
+                if (!forceRefresh) {
+                    // Get preliminary structure to check block type
+                    val preliminaryStructure = when (mode) {
+                        CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = false)
+                        CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
+                    }
+
+                    val targetBlock = preliminaryStructure.blockData.firstOrNull { it.id == unitId }
+
+                    // Check if this block or its first descendant could be gated
+                    // We check both gatedContent presence AND block type, because:
+                    // 1. If gatedContent exists, we know it's related to prerequisites
+                    // 2. If it's a problem/assessment block, it COULD become gated after wrong answers
+                    val hasGatedContent = targetBlock?.gatedContent != null
+                    val couldBeGated = targetBlock?.let { block ->
+                        block.isProblemBlock ||
+                        block.isOpenAssessmentBlock ||
+                        block.isLTIConsumerBlock ||
+                        block.isSurveyBlock
+                    } ?: false
+
+                    val firstDescendant = if (targetBlock?.descendants?.isNotEmpty() == true) {
+                        preliminaryStructure.blockData.firstOrNull { it.id == targetBlock.descendants.first() }
+                    } else null
+                    val firstDescHasGatedContent = firstDescendant?.gatedContent != null
+                    val firstDescCouldBeGated = firstDescendant?.let { block ->
+                        block.isProblemBlock ||
+                        block.isOpenAssessmentBlock ||
+                        block.isLTIConsumerBlock ||
+                        block.isSurveyBlock
+                    } ?: false
+
+                    // Force refresh if:
+                    // - Block has gatedContent (we know it's related to prerequisites)
+                    // - Block is a type that could be gated (problem, assessment, etc.)
+                    if (hasGatedContent || couldBeGated || firstDescHasGatedContent || firstDescCouldBeGated) {
+                        // Force refresh to ensure we have the latest lock status from backend
+                        shouldForceRefresh = true
+                    }
+                }
+
                 val courseStructure = when (mode) {
-                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId)
+                    CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = shouldForceRefresh)
                     CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
                 }
                 val blocks = courseStructure.blockData
                 courseName = courseStructure.name
                 this@CourseUnitContainerViewModel.blocks.clearAndAddAll(blocks)
-
                 setupCurrentIndex(componentId)
+
+                // Explicitly update subSectionUnitBlocks after refresh to ensure
+                // lock icons update when prerequisite status changes
+                if (blocks.isNotEmpty() && currentVerticalIndex != -1) {
+                    val blockId = blocks[currentVerticalIndex].id
+                    _subSectionUnitBlocks.value =
+                        getSubSectionUnitBlocks(blocks, getSubSectionId(blockId))
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+    }
+
+    fun refreshCourseData() {
+        currentMode?.let { mode ->
+            // Reset the current section index so setupCurrentIndex will run properly
+            isRefreshing = true
+            currentSectionIndex = -1
+            loadBlocks(mode, currentComponentId, forceRefresh = true)
+        }
+    }
+
+    /**
+     * Check if the tracked prerequisite has been completed.
+     * Only performs API call if we were tracking a prerequisite that was incomplete.
+     * Returns true if prerequisite completion status changed from incomplete to complete.
+     */
+    suspend fun shouldRefreshForPrerequisiteCompletion(): Boolean {
+        // Only check if we were actually viewing locked content with a tracked prerequisite
+        if (!isViewingLockedContent || trackedPrereqId == null || !wasPrereqIncomplete) {
+            return false
+        }
+
+        try {
+            // Fetch fresh data to check completion
+            val courseStructure = when (currentMode) {
+                CourseViewMode.FULL -> interactor.getCourseStructure(courseId, isNeedRefresh = true)
+                CourseViewMode.VIDEOS -> interactor.getCourseStructureForVideos(courseId)
+                else -> return false
+            }
+
+            // Find the prerequisite subsection in fresh data
+            val prereqBlock = courseStructure.blockData.firstOrNull { it.id == trackedPrereqId }
+
+            // Check if it's now complete (completion = 1.0 means all units done)
+            val isNowComplete = prereqBlock?.completion == 1.0
+
+            // Return true only if it changed from incomplete to complete
+            return isNowComplete && wasPrereqIncomplete
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    /**
+     * Returns true if we're currently viewing prerequisite-locked content.
+     * Used to determine if we should refresh data when resuming.
+     */
+    fun checkIsViewingLockedContent(): Boolean {
+        return isViewingLockedContent
     }
 
     init {
@@ -122,7 +233,8 @@ class CourseUnitContainerViewModel(
     }
 
     private fun setupCurrentIndex(componentId: String = "") {
-        if (currentSectionIndex != -1) return
+        if (currentSectionIndex != -1 && !isRefreshing) return
+        isRefreshing = false
         currentComponentId = componentId
 
         blocks.forEachIndexed { index, block ->
@@ -131,6 +243,38 @@ class CourseUnitContainerViewModel(
                 currentSectionIndex = blocks.indexOfFirst {
                     it.descendants.contains(blocks[currentVerticalIndex].id)
                 }
+                val blockGatedContent = block.gatedContent
+                val isBlockGatedWithPrereq = blockGatedContent?.gated == true &&
+                                             blockGatedContent.prereqId.isNotEmpty()
+
+                // Mark if we're viewing locked content (will be used to decide if we need to check completion later)
+                if (isBlockGatedWithPrereq && blockGatedContent != null) {
+                    isViewingLockedContent = true
+                    trackedPrereqId = blockGatedContent.prereqId
+                    val prereqBlock = blocks.firstOrNull { it.id == blockGatedContent.prereqId }
+                    wasPrereqIncomplete = prereqBlock?.completion != 1.0
+                } else {
+                    isViewingLockedContent = false
+                    trackedPrereqId = null
+                    wasPrereqIncomplete = false
+                }
+
+                val firstDescendant = if (!isBlockGatedWithPrereq && block.descendants.isNotEmpty()) {
+                    blocks.firstOrNull { it.id == block.descendants.first() }
+                } else null
+
+                val firstDescGatedContent = firstDescendant?.gatedContent
+                val firstDescGatedWithPrereq = firstDescGatedContent?.gated == true &&
+                                               firstDescGatedContent.prereqId.isNotEmpty()
+
+                // Also check first descendant for locked content
+                if (firstDescGatedWithPrereq && !isViewingLockedContent && firstDescGatedContent != null) {
+                    isViewingLockedContent = true
+                    trackedPrereqId = firstDescGatedContent.prereqId
+                    val prereqBlock = blocks.firstOrNull { it.id == firstDescGatedContent.prereqId }
+                    wasPrereqIncomplete = prereqBlock?.completion != 1.0
+                }
+
                 if (block.descendants.isNotEmpty() || block.isGated()) {
                     _descendantsBlocks.value =
                         block.descendants.mapNotNull { descendant ->
@@ -139,8 +283,13 @@ class CourseUnitContainerViewModel(
                     _subSectionUnitBlocks.value =
                         getSubSectionUnitBlocks(blocks, getSubSectionId(unitId))
 
-                    if (_descendantsBlocks.value.isEmpty()) {
-                        _descendantsBlocks.value = listOf(block)
+                    when {
+                        _descendantsBlocks.value.isEmpty() || isBlockGatedWithPrereq -> {
+                            _descendantsBlocks.value = listOf(block)
+                        }
+                        firstDescGatedWithPrereq -> {
+                            _descendantsBlocks.value = listOfNotNull(firstDescendant)
+                        }
                     }
                 } else {
                     setNextVerticalIndex()

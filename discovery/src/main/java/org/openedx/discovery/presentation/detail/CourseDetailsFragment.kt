@@ -14,6 +14,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
@@ -41,6 +44,14 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Rule
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Domain
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.outlined.Report
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
@@ -56,7 +67,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
@@ -68,15 +81,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -246,7 +263,7 @@ internal fun CourseDetailsScreen(
                 }
             }
         }
-    ) {
+    ) { paddingValues ->
         val screenWidth by remember(key1 = windowSize) {
             mutableStateOf(
                 windowSize.windowSizeValue(
@@ -260,21 +277,12 @@ internal fun CourseDetailsScreen(
             )
         }
 
-        val webViewPadding by remember(key1 = windowSize) {
-            mutableStateOf(
-                windowSize.windowSizeValue(
-                    expanded = Modifier.padding(vertical = 24.dp),
-                    compact = Modifier.padding(horizontal = 16.dp, vertical = 24.dp)
-                )
-            )
-        }
-
         HandleUIMessage(uiMessage = uiMessage, scaffoldState = scaffoldState)
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(paddingValues)
                 .statusBarsInset()
                 .displayCutoutForLandscape(),
             contentAlignment = Alignment.TopCenter
@@ -301,8 +309,7 @@ internal fun CourseDetailsScreen(
                         is CourseDetailsUIState.Loading -> {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(it),
+                                    .fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
                                 CircularProgressIndicator(color = MaterialTheme.appColors.primary)
@@ -334,41 +341,114 @@ internal fun CourseDetailsScreen(
                                         }
                                     )
                                 }
-                                if (isPreview) {
-                                    Text(
-                                        text = htmlBody,
-                                        modifier = Modifier
-                                            .testTag("txt_course_description")
-                                            .padding(all = 20.dp),
+
+                                // About this Course (with short description)
+                                if (uiState.course.shortDescription.isNotBlank()) {
+                                    CourseInfoSection(
+                                        icon = Icons.Default.Info,
+                                        title = stringResource(id = R.string.core_about_this_course),
+                                        content = uiState.course.shortDescription,
+                                        modifier = Modifier.testTag("section_about_course")
                                     )
-                                } else {
-                                    var webViewAlpha by remember { mutableFloatStateOf(0f) }
-                                    if (webViewAlpha == 0f) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 20.dp),
-                                            contentAlignment = Alignment.Center
+                                }
+
+                                // Course Description
+                                if (uiState.course.description.isNotBlank()) {
+                                    CourseInfoSection(
+                                        icon = Icons.Default.Description,
+                                        title = stringResource(id = R.string.core_course_description),
+                                        content = uiState.course.description,
+                                        modifier = Modifier.testTag("section_course_description")
+                                    )
+                                }
+
+                                // Course Overview (HTML WebView)
+                                if (uiState.course.overview.isNotBlank()) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(bottom = 8.dp)
                                         ) {
-                                            CircularProgressIndicator(color = MaterialTheme.appColors.primary)
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.Assignment,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.appColors.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = stringResource(id = R.string.core_course_overview),
+                                                style = MaterialTheme.appTypography.titleSmall,
+                                                color = MaterialTheme.appColors.textFieldHint
+                                            )
+                                        }
+
+                                        if (isPreview) {
+                                            Text(
+                                                text = htmlBody,
+                                                modifier = Modifier.testTag("txt_course_overview"),
+                                            )
+                                        } else {
+                                            var webViewAlpha by remember { mutableFloatStateOf(0f) }
+                                            if (webViewAlpha == 0f) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(top = 8.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    CircularProgressIndicator(color = MaterialTheme.appColors.primary)
+                                                }
+                                            }
+                                            Surface(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .alpha(webViewAlpha),
+                                                color = MaterialTheme.appColors.background
+                                            ) {
+                                                CourseDescription(
+                                                    modifier = Modifier,
+                                                    apiHostUrl = apiHostUrl,
+                                                    body = htmlBody,
+                                                    onWebPageLoaded = {
+                                                        webViewAlpha = 1f
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
-                                    Surface(
-                                        modifier = Modifier
-                                            .padding(top = 16.dp)
-                                            .fillMaxWidth()
-                                            .alpha(webViewAlpha),
-                                        color = MaterialTheme.appColors.background
-                                    ) {
-                                        CourseDescription(
-                                            modifier = webViewPadding,
-                                            apiHostUrl = apiHostUrl,
-                                            body = htmlBody,
-                                            onWebPageLoaded = {
-                                                webViewAlpha = 1f
-                                            }
-                                        )
-                                    }
+                                }
+
+                                // Course Requirements
+                                if (uiState.course.courseRequirement.isNotBlank()) {
+                                    CourseInfoSection(
+                                        icon = Icons.AutoMirrored.Filled.Rule,
+                                        title = stringResource(id = R.string.core_course_requirements),
+                                        content = uiState.course.courseRequirement,
+                                        modifier = Modifier.testTag("section_course_requirements")
+                                    )
+                                }
+
+                                // Learning Outcomes
+                                if (uiState.course.learningOutcomes.isNotBlank()) {
+                                    CourseInfoSection(
+                                        icon = Icons.Default.TrackChanges,
+                                        title = stringResource(id = R.string.core_learning_outcomes),
+                                        content = uiState.course.learningOutcomes,
+                                        modifier = Modifier.testTag("section_learning_outcomes")
+                                    )
+                                }
+
+                                // Instructors Section
+                                if (uiState.course.instructorsList.isNotEmpty()) {
+                                    InstructorsSection(
+                                        instructors = uiState.course.instructorsList,
+                                        modifier = Modifier.testTag("section_instructors")
+                                    )
                                 }
                             }
                         }
@@ -475,13 +555,6 @@ private fun CourseDetailNativeContent(
                 Spacer(Modifier.height(24.dp))
             }
             Text(
-                modifier = Modifier.testTag("txt_course_short_description"),
-                text = course.shortDescription,
-                style = MaterialTheme.appTypography.labelSmall,
-                color = MaterialTheme.appColors.textPrimaryVariant
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
                 modifier = Modifier.testTag("txt_course_name"),
                 text = course.name,
                 style = MaterialTheme.appTypography.titleLarge,
@@ -553,13 +626,6 @@ private fun CourseDetailNativeContentLandscape(
         ) {
             Column {
                 Text(
-                    modifier = Modifier.testTag("txt_course_short_description"),
-                    text = course.shortDescription,
-                    style = MaterialTheme.appTypography.labelSmall,
-                    color = MaterialTheme.appColors.textPrimaryVariant
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(
                     modifier = Modifier.testTag("txt_course_name"),
                     text = course.name,
                     style = MaterialTheme.appTypography.titleLarge,
@@ -570,7 +636,7 @@ private fun CourseDetailNativeContentLandscape(
                     modifier = Modifier.testTag("txt_course_org"),
                     text = course.org,
                     style = MaterialTheme.appTypography.labelMedium,
-                    color = MaterialTheme.appColors.textAccent
+                    color = MaterialTheme.appColors.primary
                 )
                 Spacer(Modifier.height(42.dp))
             }
@@ -633,6 +699,193 @@ private fun NoInternetLabel() {
         painter = painterResource(id = CoreR.drawable.core_ic_offline),
         text = stringResource(id = R.string.discovery_no_internet_label)
     )
+}
+
+@Composable
+private fun CourseInfoSection(
+    icon: ImageVector,
+    title: String,
+    content: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = if (content.isNotBlank()) 8.dp else 0.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.appColors.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.appTypography.titleSmall,
+                color = MaterialTheme.appColors.textFieldHint
+            )
+        }
+        if (content.isNotBlank()) {
+            Text(
+                text = content,
+                style = MaterialTheme.appTypography.bodyMedium,
+                color = MaterialTheme.appColors.textPrimary
+            )
+        }
+    }
+}
+
+@Composable
+private fun InstructorCard(
+    instructor: org.openedx.discovery.data.model.Instructor,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.appColors.cardViewBorder,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.appColors.background,
+        elevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                if (!instructor.image.isNullOrBlank()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(instructor.image)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = instructor.name,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, MaterialTheme.appColors.textFieldHint, CircleShape)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.appColors.cardViewBorder),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.appColors.textFieldHint,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (!instructor.name.isNullOrBlank()) {
+                        Text(
+                            text = instructor.name,
+                            style = MaterialTheme.appTypography.titleMedium.copy(
+                                fontSize = 18.sp
+                            ),
+                            color = MaterialTheme.appColors.textPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (!instructor.title.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = instructor.title,
+                            style = MaterialTheme.appTypography.bodyMedium,
+                            color = MaterialTheme.appColors.textFieldHint
+                        )
+                    }
+
+                    if (!instructor.organization.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Domain,
+                                contentDescription = null,
+                                tint = MaterialTheme.appColors.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = instructor.organization,
+                                style = MaterialTheme.appTypography.bodyMedium,
+                                color = MaterialTheme.appColors.primary
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (!instructor.bio.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = instructor.bio,
+                    style = MaterialTheme.appTypography.bodyMedium,
+                    color = MaterialTheme.appColors.textFieldHint
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InstructorsSection(
+    instructors: List<org.openedx.discovery.data.model.Instructor>,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Group,
+                contentDescription = null,
+                tint = MaterialTheme.appColors.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(id = R.string.core_instructors),
+                style = MaterialTheme.appTypography.titleSmall,
+                color = MaterialTheme.appColors.textFieldHint
+            )
+        }
+
+        instructors.forEach { instructor ->
+            InstructorCard(instructor = instructor)
+        }
+    }
 }
 
 @Composable
@@ -764,7 +1017,19 @@ private val mockCourse = Course(
     end = "end",
     startDisplay = "startDisplay",
     startType = "startType",
-    overview = "",
+    overview = "<p>Overview content</p>",
     isEnrolled = false,
     duration = "30 Days",
+    courseRequirement = "",
+    description = "",
+    learningOutcomes = "",
+    instructorsList = listOf(
+        org.openedx.discovery.data.model.Instructor(
+            name = "Instructor 1",
+            title = "Title 1",
+            organization = "Organization 1",
+            bio = "Bio content for instructor 1",
+            image = null
+        ),
+    )
 )

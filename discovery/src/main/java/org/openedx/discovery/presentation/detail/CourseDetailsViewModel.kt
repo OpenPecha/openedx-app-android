@@ -98,9 +98,20 @@ class CourseDetailsViewModel(
 
     fun getCourseAboutBody(bgColor: ULong, textColor: ULong): String {
         val darkThemeStyle = "<style>\n" +
+                "      * {\n" +
+                "        margin: 0;\n" +
+                "        padding: 0;\n" +
+                "      }\n" +
                 "      body {\n" +
                 "        background-color: #${getColorFromULong(bgColor)};\n" +
                 "        color: #${getColorFromULong(textColor)};\n" +
+                "        margin: 0;\n" +
+                "        padding: 0;\n" +
+                "        line-height: 1.5;\n" +
+                "      }\n" +
+                "      p, div, h1, h2, h3, h4, h5, h6 {\n" +
+                "        margin: 0 !important;\n" +
+                "        padding: 0 !important;\n" +
                 "      }\n" +
                 "    </style>"
         val buff = StringBuffer().apply {

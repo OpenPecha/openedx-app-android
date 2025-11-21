@@ -89,6 +89,7 @@ import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
 import org.openedx.core.ui.theme.appShapes
 import org.openedx.core.ui.theme.appTypography
+import org.openedx.core.domain.model.Media
 import org.openedx.discovery.DiscoveryMocks
 import org.openedx.discovery.R
 import org.openedx.discovery.data.model.Organization
@@ -740,3 +741,33 @@ private fun DiscoveryScreenTabletPreview() {
         )
     }
 }
+
+private val mockCourse = Course(
+    id = "id",
+    blocksUrl = "blocksUrl",
+    courseId = "courseId",
+    effort = "effort",
+    enrollmentStart = null,
+    enrollmentEnd = null,
+    hidden = false,
+    invitationOnly = false,
+    media = Media(),
+    mobileAvailable = true,
+    name = "Test course",
+    number = "number",
+    org = "EdX",
+    pacing = "pacing",
+    shortDescription = "shortDescription",
+    start = "start",
+    end = "end",
+    startDisplay = "startDisplay",
+    startType = "startType",
+    overview = "",
+    isEnrolled = false,
+    duration = "30 Days",
+    courseRequirement = "",
+    description = "",
+    learningOutcomes = "",
+    instructorsList = emptyList()
+)
+

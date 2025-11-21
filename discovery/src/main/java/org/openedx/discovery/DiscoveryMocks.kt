@@ -26,7 +26,10 @@ object DiscoveryMocks {
         startType = "startType",
         overview = "",
         isEnrolled = false,
-        duration = "30 Days"
+        duration = "30 Days",
+        courseRequirement = "",
+        description = "",
+        learningOutcomes = ""
     )
 
     fun courses(count: Int) = List(count) { course }

@@ -50,6 +50,14 @@ data class CourseDetails(
     val isEnrolled: Boolean?,
     @SerializedName("duration")
     val duration: String?,
+    @SerializedName("course_requirement")
+    val courseRequirement: String?,
+    @SerializedName("description")
+    val description: String?,
+    @SerializedName("learning_outcomes")
+    val learningOutcomes: List<String>?,
+    @SerializedName("instructors")
+    val instructors: List<Instructor>?,
 ) {
 
     fun mapToDomain(): Course {
@@ -76,6 +84,10 @@ data class CourseDetails(
             isEnrolled = isEnrolled ?: false,
             media = mapMediaToDomain(),
             duration = duration.orEmpty(),
+            courseRequirement = courseRequirement.orEmpty(),
+            description = description.orEmpty(),
+            learningOutcomes = learningOutcomes?.joinToString(", ") ?: "",
+            instructorsList = instructors ?: emptyList()
         )
     }
 

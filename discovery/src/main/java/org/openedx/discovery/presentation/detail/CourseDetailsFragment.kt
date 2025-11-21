@@ -363,7 +363,14 @@ internal fun CourseDetailsScreen(
                                 }
 
                                 // Course Overview (HTML WebView)
-                                if (uiState.course.overview.isNotBlank()) {
+                                // Only show if overview has actual content (not just empty HTML/entities)
+                                if (uiState.course.overview.isNotBlank() &&
+                                    uiState.course.overview
+                                        .replace(Regex("<[^>]*>"), "") // Remove HTML tags
+                                        .replace("&nbsp;", " ") // Replace non-breaking spaces
+                                        .replace("&amp;", "&") // Replace ampersands
+                                        .replace(Regex("\\s+"), "") // Remove all whitespace
+                                        .isNotEmpty()) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()

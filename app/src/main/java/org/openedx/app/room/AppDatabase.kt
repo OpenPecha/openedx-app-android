@@ -25,7 +25,7 @@ import org.openedx.discovery.data.converter.DiscoveryConverter
 import org.openedx.discovery.data.model.room.CourseEntity
 import org.openedx.discovery.data.storage.DiscoveryDao
 
-const val DATABASE_VERSION = 6
+const val DATABASE_VERSION = 7
 const val DATABASE_NAME = "OpenEdX_db"
 
 @Suppress("MagicNumber")
@@ -49,7 +49,7 @@ const val DATABASE_NAME = "OpenEdX_db"
         AutoMigration(2, 3),
         AutoMigration(3, 4),
         AutoMigration(4, 5),
-        AutoMigration(5, DATABASE_VERSION),
+        AutoMigration(5, 6),
     ],
     version = DATABASE_VERSION
 )

@@ -17,6 +17,7 @@ import org.openedx.app.BuildConfig
 import org.openedx.app.PluginManager
 import org.openedx.app.data.storage.PreferencesManager
 import org.openedx.app.deeplink.DeepLinkRouter
+import org.openedx.app.room.ALL_MIGRATIONS
 import org.openedx.app.room.AppDatabase
 import org.openedx.app.room.DATABASE_NAME
 import org.openedx.app.room.DatabaseManager
@@ -145,7 +146,7 @@ val appModule = module {
             androidApplication(),
             AppDatabase::class.java,
             DATABASE_NAME
-        ).fallbackToDestructiveMigration()
+        ).addMigrations(*ALL_MIGRATIONS)
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }

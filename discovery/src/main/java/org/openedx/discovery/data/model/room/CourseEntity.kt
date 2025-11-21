@@ -56,6 +56,14 @@ data class CourseEntity(
     val isEnrolled: Boolean,
     @ColumnInfo("duration")
     val duration: String,
+    @ColumnInfo("courseRequirement")
+    val courseRequirement: String,
+    @ColumnInfo("description")
+    val description: String,
+    @ColumnInfo("learningOutcomes")
+    val learningOutcomes: String,
+    @ColumnInfo("instructors")
+    val instructors: String,
 ) {
 
     fun mapToDomain(): Course {
@@ -82,6 +90,10 @@ data class CourseEntity(
             overview = overview,
             isEnrolled = isEnrolled,
             duration = duration,
+            courseRequirement = courseRequirement,
+            description = description,
+            learningOutcomes = learningOutcomes,
+            instructorsList = emptyList()
         )
     }
 
@@ -110,6 +122,10 @@ data class CourseEntity(
                 media = MediaDb.createFrom(model.media),
                 isEnrolled = model.isEnrolled ?: false,
                 duration = model.duration.orEmpty(),
+                courseRequirement = model.courseRequirement.orEmpty(),
+                description = model.description.orEmpty(),
+                learningOutcomes = model.learningOutcomes?.joinToString(", ") ?: "",
+                instructors = model.instructors?.mapNotNull { it.name }?.joinToString(", ") ?: "",
             )
         }
     }

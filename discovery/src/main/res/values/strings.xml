@@ -23,6 +23,14 @@
     <string name="course_duration_specified">Course Duration: %1$s</string>
     <string name="course_duration_unspecified">Course Duration: Not specified</string>
 
+    <!-- Course Details Sections -->
+    <string name="core_about_this_course">About this Course</string>
+    <string name="core_course_description">Course Description</string>
+    <string name="core_course_overview">Course Overview</string>
+    <string name="core_course_requirements">Course Requirements</string>
+    <string name="core_learning_outcomes">Learning Outcomes</string>
+    <string name="core_instructors">Instructors</string>
+
     <plurals name="discovery_found_courses">
         <item quantity="one">Found %s course on your request</item>
         <item quantity="other">Found %s courses on your request</item>

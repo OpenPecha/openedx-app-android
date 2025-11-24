@@ -22,6 +22,8 @@ import org.openedx.app.deeplink.HomeTab
 import org.openedx.core.AppUpdateState
 import org.openedx.core.AppUpdateState.wasUpgradeDialogClosed
 import org.openedx.core.adapter.NavigationFragmentAdapter
+import org.openedx.core.data.storage.CorePreferences
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.core.presentation.dialog.appupgrade.AppUpgradeDialogFragment
 import org.openedx.core.presentation.global.appupgrade.AppUpgradeRecommendedBox
 import org.openedx.core.presentation.global.appupgrade.UpgradeRequiredFragment

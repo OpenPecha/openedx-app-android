@@ -185,7 +185,7 @@
     <string name="core_download_queue_title">Downloads</string>
     <string name="core_download_untitled">(Untitled)</string>
     <string name="core_download_big_files_confirmation_title">Download</string>
-    <string name="core_download_big_files_confirmation_text">The videos you\'ve selected are larger than 1 GB. Do you want to download these videos?</string>
+    <string name="core_download_big_files_confirmation_text">The videos you\’ve selected are larger than 1 GB. Do you want to download these videos?</string>
     <string name="core_delete_in_process_confirmation" formatted="false">Turning off the switch will stop downloading and delete all downloaded videos for \"%s\"?</string>
     <string name="core_delete_confirmation" formatted="false">Are you sure you want to delete all video(s) for \"%s\"?</string>
     <string name="core_delete_download_confirmation_text" formatted="false">Are you sure you want to delete video(s) for \"%s\"?</string>
@@ -225,4 +225,10 @@
     <string name="core_sign_in_sso_heading">Start today to build your career with confidence</string>
     <string name="core_sign_in_sso_login_title">Sign in</string>
     <string name="core_sign_in_sso_login_subtitle">Sign in through the national unified sign-on service</string>
+
+    <!-- Theme Options -->
+    <string name="core_theme">Theme</string>
+    <string name="core_theme_system">Use system theme</string>
+    <string name="core_theme_light">Light</string>
+    <string name="core_theme_dark">Dark</string>
 </resources>

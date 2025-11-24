@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.foundation.presentation.rememberWindowSize
 
@@ -92,6 +93,16 @@ class SettingsFragment : Fragment() {
                                     requireActivity().supportFragmentManager
                                 )
                             }
+
+                            SettingsScreenAction.ThemeSettingsClick -> {
+                                viewModel.themeSettingsClicked(
+                                    requireActivity().supportFragmentManager
+                                )
+                            }
+
+                            is SettingsScreenAction.ThemeModeSelected -> {
+                                viewModel.setThemeMode(action.mode)
+                            }
                         }
                     }
                 )
@@ -99,6 +110,12 @@ class SettingsFragment : Fragment() {
                 LaunchedEffect(logoutSuccess) {
                     if (logoutSuccess) {
                         viewModel.restartApp(requireActivity().supportFragmentManager)
+                    }
+                }
+
+                LaunchedEffect(Unit) {
+                    viewModel.themeChanged.collect {
+                        requireActivity().recreate()
                     }
                 }
             }
@@ -118,4 +135,6 @@ internal interface SettingsScreenAction {
     object VideoSettingsClick : SettingsScreenAction
     object ManageAccountClick : SettingsScreenAction
     object CalendarSettingsClick : SettingsScreenAction
+    object ThemeSettingsClick : SettingsScreenAction
+    data class ThemeModeSelected(val mode: ThemeMode) : SettingsScreenAction
 }

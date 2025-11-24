@@ -258,4 +258,40 @@ class PreferencesManager(
     override fun isCalendarSyncEventsDialogShown(courseName: String): Boolean {
         return getValue(Keys.calendarSyncDialogShown(courseName), false)
     }
+
+    override var themeMode: org.openedx.core.data.storage.ThemeMode
+        set(value) {
+            saveString(THEME_MODE, value.name)
+        }
+        get() {
+            val v = getString(THEME_MODE, defValue = org.openedx.core.data.storage.ThemeMode.SYSTEM.name)
+            return try {
+                org.openedx.core.data.storage.ThemeMode.valueOf(v)
+            } catch (e: Exception) {
+                org.openedx.core.data.storage.ThemeMode.SYSTEM
+            }
+        }
+
+    companion object {
+        private const val ACCESS_TOKEN = "access_token"
+        private const val REFRESH_TOKEN = "refresh_token"
+        private const val PUSH_TOKEN = "push_token"
+        private const val EXPIRES_IN = "expires_in"
+        private const val USER = "user"
+        private const val ACCOUNT = "account"
+        private const val LAST_WHATS_NEW_VERSION = "last_whats_new_version"
+        private const val LAST_REVIEW_VERSION = "last_review_version"
+        private const val APP_WAS_POSITIVE_RATED = "app_was_positive_rated"
+        private const val VIDEO_SETTINGS_WIFI_DOWNLOAD_ONLY = "video_settings_wifi_download_only"
+        private const val VIDEO_SETTINGS_STREAMING_QUALITY = "video_settings_streaming_quality"
+        private const val VIDEO_SETTINGS_DOWNLOAD_QUALITY = "video_settings_download_quality"
+        private const val APP_CONFIG = "app_config"
+        private const val CALENDAR_ID = "CALENDAR_ID"
+        private const val RESET_APP_DIRECTORY = "reset_app_directory"
+        private const val IS_CALENDAR_SYNC_ENABLED = "IS_CALENDAR_SYNC_ENABLED"
+        private const val IS_RELATIVE_DATES_ENABLED = "IS_RELATIVE_DATES_ENABLED"
+        private const val HIDE_INACTIVE_COURSES = "HIDE_INACTIVE_COURSES"
+        private const val CALENDAR_USER = "CALENDAR_USER"
+        private const val THEME_MODE = "theme_mode"
+    }
 }

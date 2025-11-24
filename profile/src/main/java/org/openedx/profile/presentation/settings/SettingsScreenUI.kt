@@ -96,8 +96,7 @@ internal fun SettingsScreen(
         mutableStateOf(
             windowSize.windowSizeValue(
                 expanded = Modifier.widthIn(Dp.Unspecified, 560.dp),
-                compact = Modifier
-                    .fillMaxWidth()
+                compact = Modifier.fillMaxWidth()
             )
         )
     }
@@ -181,6 +180,9 @@ internal fun SettingsScreen(
                                         },
                                         onCalendarSettingsClick = {
                                             onAction(SettingsScreenAction.CalendarSettingsClick)
+                                        },
+                                        onThemeClick = {
+                                            onAction(SettingsScreenAction.ThemeSettingsClick)
                                         }
                                     )
 
@@ -212,7 +214,8 @@ internal fun SettingsScreen(
 @Composable
 private fun SettingsSection(
     onVideoSettingsClick: () -> Unit,
-    onCalendarSettingsClick: () -> Unit
+    onCalendarSettingsClick: () -> Unit,
+    onThemeClick: () -> Unit
 ) {
     Column {
         Text(
@@ -237,6 +240,11 @@ private fun SettingsSection(
                 SettingsItem(
                     text = stringResource(id = profileR.string.profile_dates_and_calendar),
                     onClick = onCalendarSettingsClick
+                )
+                SettingsDivider()
+                SettingsItem(
+                    text = stringResource(id = R.string.core_theme),
+                    onClick = onThemeClick
                 )
             }
         }

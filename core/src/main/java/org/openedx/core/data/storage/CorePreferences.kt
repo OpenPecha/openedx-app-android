@@ -4,6 +4,12 @@ import org.openedx.core.data.model.User
 import org.openedx.core.domain.model.AppConfig
 import org.openedx.core.domain.model.VideoSettings
 
+enum class ThemeMode {
+    LIGHT,
+    DARK,
+    SYSTEM
+}
+
 interface CorePreferences {
     var accessToken: String
     var refreshToken: String
@@ -14,6 +20,6 @@ interface CorePreferences {
     var appConfig: AppConfig
     var canResetAppDirectory: Boolean
     var isRelativeDatesEnabled: Boolean
-
+    var themeMode: ThemeMode
     fun clearCorePreferences()
 }

@@ -219,6 +219,19 @@ class PreferencesManager(context: Context) :
     override fun isCalendarSyncEventsDialogShown(courseName: String): Boolean =
         getBoolean(courseName.replaceSpace("_"))
 
+    override var themeMode: org.openedx.core.data.storage.ThemeMode
+        set(value) {
+            saveString(THEME_MODE, value.name)
+        }
+        get() {
+            val v = getString(THEME_MODE, defValue = org.openedx.core.data.storage.ThemeMode.SYSTEM.name)
+            return try {
+                org.openedx.core.data.storage.ThemeMode.valueOf(v)
+            } catch (e: Exception) {
+                org.openedx.core.data.storage.ThemeMode.SYSTEM
+            }
+        }
+
     companion object {
         private const val ACCESS_TOKEN = "access_token"
         private const val REFRESH_TOKEN = "refresh_token"
@@ -239,5 +252,6 @@ class PreferencesManager(context: Context) :
         private const val IS_RELATIVE_DATES_ENABLED = "IS_RELATIVE_DATES_ENABLED"
         private const val HIDE_INACTIVE_COURSES = "HIDE_INACTIVE_COURSES"
         private const val CALENDAR_USER = "CALENDAR_USER"
+        private const val THEME_MODE = "theme_mode"
     }
 }

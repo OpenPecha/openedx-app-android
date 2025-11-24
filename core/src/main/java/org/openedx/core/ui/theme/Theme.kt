@@ -9,6 +9,10 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.platform.LocalContext
+import org.koin.core.context.GlobalContext
+import android.content.Context
+import org.openedx.core.data.storage.ThemeMode
 
 private val DarkColorPalette = AppColors(
     material = darkColors(
@@ -195,7 +199,7 @@ val MaterialTheme.appColors: AppColors
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun OpenEdXTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun OpenEdXTheme(darkTheme: Boolean = getDarkThemeFromPreferences(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) {
         DarkColorPalette
     } else {
@@ -211,5 +215,22 @@ fun OpenEdXTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
             LocalOverscrollConfiguration provides null,
             content = content
         )
+    }
+}
+
+@Composable
+fun getDarkThemeFromPreferences(): Boolean {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
+    val value = prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name
+    val mode = try {
+        ThemeMode.valueOf(value)
+    } catch (e: Exception) {
+        ThemeMode.SYSTEM
+    }
+    return when (mode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
 }

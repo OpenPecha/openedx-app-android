@@ -14,6 +14,8 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.openedx.app.databinding.FragmentMainBinding
 import org.openedx.app.deeplink.HomeTab
 import org.openedx.core.adapter.NavigationFragmentAdapter
+import org.openedx.core.data.storage.CorePreferences
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.core.presentation.global.appupgrade.UpgradeRequiredFragment
 import org.openedx.core.presentation.global.viewBinding
 import org.openedx.discovery.presentation.DiscoveryRouter
@@ -133,6 +135,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             it.isEnabled = enable
         }
     }
+
 
     companion object {
         private const val ARG_COURSE_ID = "courseId"

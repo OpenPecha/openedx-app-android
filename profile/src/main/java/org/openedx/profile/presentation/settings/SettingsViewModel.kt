@@ -17,6 +17,8 @@ import org.openedx.core.AppUpdateState
 import org.openedx.core.CalendarRouter
 import org.openedx.core.R
 import org.openedx.core.config.Config
+import org.openedx.core.data.storage.CorePreferences
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.core.module.DownloadWorkerController
 import org.openedx.core.presentation.global.AppData
 import org.openedx.core.system.AppCookieManager
@@ -49,9 +51,15 @@ class SettingsViewModel(
     private val calendarRouter: CalendarRouter,
     private val appNotifier: AppNotifier,
     private val profileNotifier: ProfileNotifier,
+    private val corePreferences: CorePreferences,
 ) : BaseViewModel() {
 
-    private val _uiState: MutableStateFlow<SettingsUIState> = MutableStateFlow(SettingsUIState.Data(configuration))
+    private val _uiState: MutableStateFlow<SettingsUIState> = MutableStateFlow(
+        SettingsUIState.Data(
+            configuration,
+            themeMode = corePreferences.themeMode
+        )
+    )
     internal val uiState: StateFlow<SettingsUIState> = _uiState.asStateFlow()
 
     private val _successLogout = MutableSharedFlow<Boolean>()
@@ -65,6 +73,9 @@ class SettingsViewModel(
     private val _appUpgradeEvent = MutableStateFlow<AppUpgradeEvent?>(null)
     val appUpgradeEvent: StateFlow<AppUpgradeEvent?>
         get() = _appUpgradeEvent.asStateFlow()
+
+    private val _themeChanged = MutableSharedFlow<Unit>()
+    val themeChanged = _themeChanged.asSharedFlow()
 
     val isLogistrationEnabled get() = config.isPreLoginExperienceEnabled()
 
@@ -203,11 +214,31 @@ class SettingsViewModel(
         calendarRouter.navigateToCalendarSettings(fragmentManager)
     }
 
+    fun themeSettingsClicked(fragmentManager: FragmentManager) {
+        profileRouter.navigateToThemeSettings(fragmentManager)
+    }
+
     fun restartApp(fragmentManager: FragmentManager) {
         profileRouter.restartApp(
             fragmentManager,
             isLogistrationEnabled
         )
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch {
+            try {
+                corePreferences.themeMode = mode
+                _uiState.emit(
+                    SettingsUIState.Data(
+                        configuration = configuration,
+                        themeMode = mode
+                    )
+                )
+                _themeChanged.emit(Unit)
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private fun logProfileEvent(

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -24,6 +25,7 @@ import org.openedx.app.deeplink.DeepLink
 import org.openedx.auth.presentation.logistration.LogistrationFragment
 import org.openedx.auth.presentation.signin.SignInFragment
 import org.openedx.core.data.storage.CorePreferences
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.core.presentation.dialog.downloaddialog.DownloadDialogManager
 import org.openedx.core.presentation.global.InsetHolder
 import org.openedx.core.presentation.global.WindowSizeHolder
@@ -92,6 +94,7 @@ class AppActivity : AppCompatActivity(), InsetHolder, WindowSizeHolder {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyThemeMode()
         installSplashScreen()
         binding = ActivityAppBinding.inflate(layoutInflater)
         lifecycle.addObserver(viewModel)
@@ -264,6 +267,18 @@ class AppActivity : AppCompatActivity(), InsetHolder, WindowSizeHolder {
     private fun handlePushNotification(data: Bundle) {
         val deepLink = DeepLink(data.toStringMap())
         viewModel.makeExternalRoute(supportFragmentManager, deepLink)
+    }
+
+    private fun applyThemeMode() {
+        val themeMode = corePreferencesManager.themeMode
+
+        val nightMode = when (themeMode) {
+            ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
+            ThemeMode.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+
+        AppCompatDelegate.setDefaultNightMode(nightMode)
     }
 
     companion object {

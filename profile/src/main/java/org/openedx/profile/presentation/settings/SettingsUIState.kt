@@ -7,6 +7,7 @@ sealed class SettingsUIState {
     data class Data(
         val configuration: Configuration,
         val themeMode: ThemeMode = ThemeMode.SYSTEM,
+        val appLanguage: String = "",
     ) : SettingsUIState()
 
     object Loading : SettingsUIState()

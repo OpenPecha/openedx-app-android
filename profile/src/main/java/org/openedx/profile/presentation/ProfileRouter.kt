@@ -25,4 +25,6 @@ interface ProfileRouter {
     fun navigateToCoursesToSync(fm: FragmentManager)
 
     fun navigateToThemeSettings(fm: FragmentManager)
+
+    fun navigateToLanguageSettings(fm: FragmentManager)
 }

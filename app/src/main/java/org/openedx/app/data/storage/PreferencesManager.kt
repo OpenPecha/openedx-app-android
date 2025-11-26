@@ -85,6 +85,8 @@ class PreferencesManager(
         val LAST_WHATS_NEW_VERSION = stringPreferencesKey("last_whats_new_version")
         val LAST_REVIEW_VERSION = stringPreferencesKey("last_review_version")
         val WAS_POSITIVE_RATED = booleanPreferencesKey("app_was_positive_rated")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
 
         fun calendarSyncDialogShown(courseName: String) =
             booleanPreferencesKey("calendar_sync_dialog_${courseName.replaceSpace("_")}")
@@ -260,17 +262,19 @@ class PreferencesManager(
     }
 
     override var themeMode: org.openedx.core.data.storage.ThemeMode
-        set(value) {
-            saveString(THEME_MODE, value.name)
-        }
         get() {
-            val v = getString(THEME_MODE, defValue = org.openedx.core.data.storage.ThemeMode.SYSTEM.name)
+            val v = getValue(Keys.THEME_MODE, org.openedx.core.data.storage.ThemeMode.SYSTEM.name)
             return try {
                 org.openedx.core.data.storage.ThemeMode.valueOf(v)
             } catch (e: Exception) {
                 org.openedx.core.data.storage.ThemeMode.SYSTEM
             }
         }
+        set(value) = setValue(Keys.THEME_MODE, value.name)
+
+    override var appLanguage: String
+        get() = getValue(Keys.APP_LANGUAGE, "")
+        set(value) = setValue(Keys.APP_LANGUAGE, value)
 
     companion object {
         private const val ACCESS_TOKEN = "access_token"
@@ -292,6 +296,5 @@ class PreferencesManager(
         private const val IS_RELATIVE_DATES_ENABLED = "IS_RELATIVE_DATES_ENABLED"
         private const val HIDE_INACTIVE_COURSES = "HIDE_INACTIVE_COURSES"
         private const val CALENDAR_USER = "CALENDAR_USER"
-        private const val THEME_MODE = "theme_mode"
     }
 }

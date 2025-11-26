@@ -183,6 +183,9 @@ internal fun SettingsScreen(
                                         },
                                         onThemeClick = {
                                             onAction(SettingsScreenAction.ThemeSettingsClick)
+                                        },
+                                        onLanguageClick = {
+                                            onAction(SettingsScreenAction.LanguageSettingsClick)
                                         }
                                     )
 
@@ -215,7 +218,8 @@ internal fun SettingsScreen(
 private fun SettingsSection(
     onVideoSettingsClick: () -> Unit,
     onCalendarSettingsClick: () -> Unit,
-    onThemeClick: () -> Unit
+    onThemeClick: () -> Unit,
+    onLanguageClick: () -> Unit
 ) {
     Column {
         Text(
@@ -245,6 +249,11 @@ private fun SettingsSection(
                 SettingsItem(
                     text = stringResource(id = R.string.core_theme),
                     onClick = onThemeClick
+                )
+                SettingsDivider()
+                SettingsItem(
+                    text = stringResource(id = R.string.core_language),
+                    onClick = onLanguageClick
                 )
             }
         }

@@ -21,5 +21,6 @@ interface CorePreferences {
     var canResetAppDirectory: Boolean
     var isRelativeDatesEnabled: Boolean
     var themeMode: ThemeMode
+    var appLanguage: String
     fun clearCorePreferences()
 }

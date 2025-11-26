@@ -197,4 +197,7 @@
     <string name="core_theme_system">Use system theme</string>
     <string name="core_theme_light">Light</string>
     <string name="core_theme_dark">Dark</string>
+
+    <!-- Language Options -->
+    <string name="core_language">Language</string>
 </resources>

@@ -232,6 +232,10 @@ class PreferencesManager(context: Context) :
             }
         }
 
+    override var appLanguage: String
+        get() = getString(APP_LANGUAGE, "")
+        set(value) = saveString(APP_LANGUAGE, value)
+
     companion object {
         private const val ACCESS_TOKEN = "access_token"
         private const val REFRESH_TOKEN = "refresh_token"
@@ -253,5 +257,6 @@ class PreferencesManager(context: Context) :
         private const val HIDE_INACTIVE_COURSES = "HIDE_INACTIVE_COURSES"
         private const val CALENDAR_USER = "CALENDAR_USER"
         private const val THEME_MODE = "theme_mode"
+        private const val APP_LANGUAGE = "app_language"
     }
 }

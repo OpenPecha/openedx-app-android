@@ -38,7 +38,14 @@ android {
         versionCode 6
         versionName "1.0.5"
 
-        resourceConfigurations += ["en", "uk"]
+        // Only include supported languages to reduce APK size
+        // Must match languages available in LanguageFragment.kt
+        resourceConfigurations += [
+            "en",          // English (default)
+            "bo",          // Tibetan
+            "vi",          // Vietnamese
+            "zh-rHK"       // Chinese - Hong Kong
+        ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

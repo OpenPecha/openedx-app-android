@@ -54,7 +54,8 @@ class SettingsViewModel(
     private val _uiState: MutableStateFlow<SettingsUIState> = MutableStateFlow(
         SettingsUIState.Data(
             configuration,
-            themeMode = corePreferences.themeMode
+            themeMode = corePreferences.themeMode,
+            appLanguage = corePreferences.appLanguage
         )
     )
     internal val uiState: StateFlow<SettingsUIState> = _uiState.asStateFlow()
@@ -74,6 +75,8 @@ class SettingsViewModel(
     private val _themeChanged = MutableSharedFlow<Unit>()
     val themeChanged = _themeChanged.asSharedFlow()
 
+    private val _languageChanged = MutableSharedFlow<Unit>()
+    val languageChanged = _languageChanged.asSharedFlow()
 
     val isLogistrationEnabled get() = config.isPreLoginExperienceEnabled()
 
@@ -193,6 +196,21 @@ class SettingsViewModel(
 
     fun themeSettingsClicked(fragmentManager: FragmentManager) {
         profileRouter.navigateToThemeSettings(fragmentManager)
+    }
+
+    fun languageSettingsClicked(fragmentManager: FragmentManager) {
+        profileRouter.navigateToLanguageSettings(fragmentManager)
+    }
+
+    fun setAppLanguage(languageCode: String) {
+        corePreferences.appLanguage = languageCode
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            if (currentState is SettingsUIState.Data) {
+                _uiState.emit(currentState.copy(appLanguage = languageCode))
+            }
+            _languageChanged.emit(Unit)
+        }
     }
 
     fun restartApp(fragmentManager: FragmentManager) {

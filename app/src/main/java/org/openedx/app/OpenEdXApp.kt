@@ -93,5 +93,20 @@ class OpenEdXApp : Application() {
         }
 
         AppCompatDelegate.setDefaultNightMode(nightMode)
+        applyLanguage()
+    }
+
+    private fun applyLanguage() {
+        val prefs = getSharedPreferences(BuildConfig.APPLICATION_ID, MODE_PRIVATE)
+        val languageCode = prefs.getString("app_language", "") ?: ""
+
+        if (languageCode.isNotEmpty()) {
+            // Use AppCompatDelegate for proper locale handling
+            val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(languageCode)
+            AppCompatDelegate.setApplicationLocales(localeList)
+        } else {
+            // Empty string means use system language
+            AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.getEmptyLocaleList())
+        }
     }
 }

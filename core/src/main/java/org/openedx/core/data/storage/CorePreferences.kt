@@ -22,6 +22,7 @@ interface CorePreferences {
     var isRelativeDatesEnabled: Boolean
 
     var themeMode: ThemeMode
+    var appLanguage: String
 
     suspend fun clearCorePreferences()
 }

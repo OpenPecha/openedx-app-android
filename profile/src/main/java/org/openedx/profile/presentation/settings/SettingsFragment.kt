@@ -100,6 +100,12 @@ class SettingsFragment : Fragment() {
                                 )
                             }
 
+                            SettingsScreenAction.LanguageSettingsClick -> {
+                                viewModel.languageSettingsClicked(
+                                    requireActivity().supportFragmentManager
+                                )
+                            }
+
                             is SettingsScreenAction.ThemeModeSelected -> {
                                 viewModel.setThemeMode(action.mode)
                             }
@@ -136,5 +142,6 @@ internal interface SettingsScreenAction {
     object ManageAccountClick : SettingsScreenAction
     object CalendarSettingsClick : SettingsScreenAction
     object ThemeSettingsClick : SettingsScreenAction
+    object LanguageSettingsClick : SettingsScreenAction
     data class ThemeModeSelected(val mode: ThemeMode) : SettingsScreenAction
 }

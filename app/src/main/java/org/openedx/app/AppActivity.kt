@@ -279,6 +279,18 @@ class AppActivity : AppCompatActivity(), InsetHolder, WindowSizeHolder {
         }
 
         AppCompatDelegate.setDefaultNightMode(nightMode)
+
+        // Also apply language
+        applyLanguage()
+    }
+
+    private fun applyLanguage() {
+        val languageCode = corePreferencesManager.appLanguage
+
+        if (languageCode.isNotEmpty()) {
+            val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(languageCode)
+            AppCompatDelegate.setApplicationLocales(localeList)
+        }
     }
 
     companion object {

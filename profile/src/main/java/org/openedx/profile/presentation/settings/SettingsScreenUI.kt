@@ -21,6 +21,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.SmartDisplay
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -236,21 +240,25 @@ private fun SettingsSection(
             Column(Modifier.fillMaxWidth()) {
                 SettingsItem(
                     text = stringResource(id = profileR.string.profile_video),
+                    icon = Icons.Outlined.SmartDisplay,
                     onClick = onVideoSettingsClick
                 )
                 SettingsDivider()
                 SettingsItem(
                     text = stringResource(id = profileR.string.profile_dates_and_calendar),
+                    icon = Icons.Outlined.CalendarMonth,
                     onClick = onCalendarSettingsClick
                 )
                 SettingsDivider()
                 SettingsItem(
                     text = stringResource(id = R.string.core_theme),
+                    icon = Icons.Outlined.Palette,
                     onClick = onThemeClick
                 )
                 SettingsDivider()
                 SettingsItem(
                     text = stringResource(id = R.string.core_language),
+                    icon = Icons.Outlined.Language,
                     onClick = onLanguageClick
                 )
             }

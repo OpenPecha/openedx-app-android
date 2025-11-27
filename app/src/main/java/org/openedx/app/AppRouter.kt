@@ -53,7 +53,9 @@ import org.openedx.profile.presentation.delete.DeleteProfileFragment
 import org.openedx.profile.presentation.edit.EditProfileFragment
 import org.openedx.profile.presentation.manageaccount.ManageAccountFragment
 import org.openedx.profile.presentation.profile.ProfileFragment
+import org.openedx.profile.presentation.settings.LanguageFragment
 import org.openedx.profile.presentation.settings.SettingsFragment
+import org.openedx.profile.presentation.settings.ThemeFragment
 import org.openedx.profile.presentation.video.VideoSettingsFragment
 import org.openedx.whatsnew.WhatsNewRouter
 import org.openedx.whatsnew.presentation.whatsnew.WhatsNewFragment
@@ -440,6 +442,14 @@ class AppRouter :
 
     override fun navigateToCoursesToSync(fm: FragmentManager) {
         replaceFragmentWithBackStack(fm, CoursesToSyncFragment())
+    }
+
+    override fun navigateToThemeSettings(fm: FragmentManager) {
+        replaceFragmentWithBackStack(fm, ThemeFragment.newInstance())
+    }
+
+    override fun navigateToLanguageSettings(fm: FragmentManager) {
+        replaceFragmentWithBackStack(fm, LanguageFragment.newInstance())
     }
     // endregion
 

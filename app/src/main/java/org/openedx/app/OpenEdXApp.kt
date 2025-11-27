@@ -1,6 +1,7 @@
 package org.openedx.app
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import com.braze.Braze
 import com.braze.configuration.BrazeConfig
 import com.braze.ui.BrazeDeeplinkHandler
@@ -14,6 +15,7 @@ import org.openedx.app.di.appModule
 import org.openedx.app.di.networkingModule
 import org.openedx.app.di.screenModule
 import org.openedx.core.config.Config
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.firebase.OEXFirebaseAnalytics
 
 class OpenEdXApp : Application() {
@@ -23,6 +25,8 @@ class OpenEdXApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        applyThemeMode()
+
         startKoin {
             androidContext(this@OpenEdXApp)
             modules(
@@ -31,6 +35,7 @@ class OpenEdXApp : Application() {
                 screenModule
             )
         }
+
         if (config.getFirebaseConfig().enabled) {
             FirebaseApp.initializeApp(this)
         }
@@ -67,6 +72,41 @@ class OpenEdXApp : Application() {
     private fun initPlugins() {
         if (config.getFirebaseConfig().enabled) {
             pluginManager.addPlugin(OEXFirebaseAnalytics(context = this))
+        }
+    }
+
+    private fun applyThemeMode() {
+        val prefs = getSharedPreferences(BuildConfig.APPLICATION_ID, MODE_PRIVATE)
+        val themeModeString = prefs.getString("theme_mode", ThemeMode.SYSTEM.name)
+            ?: ThemeMode.SYSTEM.name
+
+        val themeMode = try {
+            ThemeMode.valueOf(themeModeString)
+        } catch (_: Exception) {
+            ThemeMode.SYSTEM
+        }
+
+        val nightMode = when (themeMode) {
+            ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
+            ThemeMode.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+
+        AppCompatDelegate.setDefaultNightMode(nightMode)
+        applyLanguage()
+    }
+
+    private fun applyLanguage() {
+        val prefs = getSharedPreferences(BuildConfig.APPLICATION_ID, MODE_PRIVATE)
+        val languageCode = prefs.getString("app_language", "") ?: ""
+
+        if (languageCode.isNotEmpty()) {
+            // Use AppCompatDelegate for proper locale handling
+            val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(languageCode)
+            AppCompatDelegate.setApplicationLocales(localeList)
+        } else {
+            // Empty string means use system language
+            AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.getEmptyLocaleList())
         }
     }
 }

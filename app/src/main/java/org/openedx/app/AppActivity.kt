@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -27,6 +28,7 @@ import org.openedx.auth.presentation.logistration.LogistrationFragment
 import org.openedx.auth.presentation.signin.SignInFragment
 import org.openedx.core.ApiConstants
 import org.openedx.core.data.storage.CorePreferences
+import org.openedx.core.data.storage.ThemeMode
 import org.openedx.core.presentation.global.InsetHolder
 import org.openedx.core.presentation.global.WindowSizeHolder
 import org.openedx.core.utils.Logger
@@ -102,6 +104,7 @@ class AppActivity : AppCompatActivity(), InsetHolder, WindowSizeHolder {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyThemeMode()
         installSplashScreen()
         binding = ActivityAppBinding.inflate(layoutInflater)
         lifecycle.addObserver(viewModel)
@@ -274,6 +277,30 @@ class AppActivity : AppCompatActivity(), InsetHolder, WindowSizeHolder {
     private fun handlePushNotification(data: Bundle) {
         val deepLink = DeepLink(data.toStringMap())
         viewModel.makeExternalRoute(supportFragmentManager, deepLink)
+    }
+
+    private fun applyThemeMode() {
+        val themeMode = corePreferencesManager.themeMode
+
+        val nightMode = when (themeMode) {
+            ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
+            ThemeMode.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+
+        AppCompatDelegate.setDefaultNightMode(nightMode)
+
+        // Also apply language
+        applyLanguage()
+    }
+
+    private fun applyLanguage() {
+        val languageCode = corePreferencesManager.appLanguage
+
+        if (languageCode.isNotEmpty()) {
+            val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(languageCode)
+            AppCompatDelegate.setApplicationLocales(localeList)
+        }
     }
 
     companion object {

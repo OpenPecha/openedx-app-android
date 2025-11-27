@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
-    <locale android:name = "en"/>
-    <locale android:name = "uk"/>
+    <!-- Default language -->
+    <locale android:name="en"/>
+    <!-- Supported languages with complete translations -->
+    <locale android:name="bo"/>
+    <locale android:name="vi"/>
+    <locale android:name="zh-HK"/>
 </locale-config>

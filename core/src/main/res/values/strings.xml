@@ -191,4 +191,13 @@
     <string name="core_not_synced">Not Synced</string>
     <string name="core_syncing_to_calendar">Syncing to calendar…</string>
     <string name="core_next">Next</string>
+
+    <!-- Theme Options -->
+    <string name="core_theme">Theme</string>
+    <string name="core_theme_system">Use system theme</string>
+    <string name="core_theme_light">Light</string>
+    <string name="core_theme_dark">Dark</string>
+
+    <!-- Language Options -->
+    <string name="core_language">Language</string>
 </resources>

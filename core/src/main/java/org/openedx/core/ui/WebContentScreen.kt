@@ -6,7 +6,6 @@ import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import org.openedx.core.ui.theme.appColors
+import org.openedx.core.ui.theme.getDarkThemeFromPreferences
 import org.openedx.core.utils.EmailUtil
 import org.openedx.foundation.extension.applyDarkModeIfEnabled
 import org.openedx.foundation.extension.isEmailValid
@@ -132,7 +132,7 @@ private fun WebViewContent(
     onWebPageLoaded: () -> Unit
 ) {
     val context = LocalContext.current
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = getDarkThemeFromPreferences()
     AndroidView(
         factory = {
             WebView(context).apply {

@@ -58,6 +58,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         setupViewPager()
         setupBottomPopup()
         observeViewModel()
+        fixBottomNavigationTextRendering()
     }
 
     private fun handleArguments() {
@@ -256,6 +257,46 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             }
         }
     }
+
+    /**
+     * Fix Tibetan text rendering in bottom navigation.
+     * Moves Tibetan labels down to prevent overlapping with icons.
+     */
+    private fun fixBottomNavigationTextRendering() {
+        binding.bottomNavView.post {
+            val bottomNavMenuView = binding.bottomNavView.getChildAt(0) as? android.view.ViewGroup
+            bottomNavMenuView?.let { menuView ->
+                for (i in 0 until menuView.childCount) {
+                    val item = menuView.getChildAt(i) as? android.view.ViewGroup
+                    item?.let { itemView ->
+                        fixTextViewsRecursively(itemView)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursively find TextViews and fix Tibetan text rendering.
+     */
+    private fun fixTextViewsRecursively(view: View) {
+        if (view is android.widget.TextView) {
+            val text = view.text?.toString() ?: ""
+            val hasTibetan = text.any { it.code in 0x0F00..0x0FFF }
+
+            if (hasTibetan) {
+                view.includeFontPadding = false
+                val density = resources.displayMetrics.density
+                view.translationY = 8 * density
+            }
+        } else if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                fixTextViewsRecursively(view.getChildAt(i))
+            }
+        }
+    }
+
+
 
     companion object {
         private const val ARG_COURSE_ID = "courseId"

@@ -18,7 +18,7 @@ import org.openedx.discovery.data.converter.DiscoveryConverter
 import org.openedx.discovery.data.model.room.CourseEntity
 import org.openedx.discovery.data.storage.DiscoveryDao
 
-const val DATABASE_VERSION = 2
+const val DATABASE_VERSION = 3
 const val DATABASE_NAME = "OpenEdX_db"
 
 @Database(

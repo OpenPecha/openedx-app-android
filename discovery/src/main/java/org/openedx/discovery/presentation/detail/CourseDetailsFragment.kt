@@ -46,11 +46,13 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Rule
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Domain
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.outlined.Report
 import androidx.compose.material.rememberScaffoldState
@@ -82,6 +84,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -89,7 +92,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import coil.compose.AsyncImage
@@ -108,6 +113,7 @@ import org.openedx.core.ui.isPreview
 import org.openedx.core.ui.statusBarsInset
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
+import org.openedx.core.ui.theme.appShapes
 import org.openedx.core.ui.theme.appTypography
 import org.openedx.core.utils.EmailUtil
 import org.openedx.discovery.R
@@ -510,9 +516,14 @@ private fun CourseDetailNativeContent(
 
     val buttonText = if (course.isEnrolled) {
         stringResource(id = R.string.discovery_view_course)
+    } else if (!course.purchaseLink.isNullOrBlank()) {
+        stringResource(id = R.string.discovery_buy_course)
     } else {
         stringResource(id = R.string.discovery_enroll_now)
     }
+
+    var showPurchaseDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val durationText = if (course.duration.isBlank()) {
         stringResource(id = R.string.course_duration_unspecified)
@@ -576,10 +587,61 @@ private fun CourseDetailNativeContent(
             )
             if (!(enrollmentEnd != null && Date() > enrollmentEnd)) {
                 Spacer(Modifier.height(32.dp))
-                OpenEdXButton(
-                    modifier = buttonWidth,
-                    text = buttonText,
-                    onClick = onButtonClick
+                if (course.isEnrolled) {
+                    // User is enrolled - show regular View Course button
+                    OpenEdXButton(
+                        modifier = buttonWidth,
+                        text = buttonText,
+                        onClick = onButtonClick
+                    )
+                } else if (!course.purchaseLink.isNullOrBlank()) {
+                    // User not enrolled and purchase link exists - show Buy Course button with cart icon
+                    OpenEdXButton(
+                        modifier = buttonWidth,
+                        text = buttonText,
+                        onClick = {
+                            showPurchaseDialog = true
+                        },
+                        content = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ShoppingCart,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.appColors.primaryButtonText,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = buttonText,
+                                    color = MaterialTheme.appColors.primaryButtonText,
+                                    style = MaterialTheme.appTypography.labelLarge
+                                )
+                            }
+                        }
+                    )
+                } else {
+                    // User not enrolled and no purchase link - show regular Enroll Now button
+                    OpenEdXButton(
+                        modifier = buttonWidth,
+                        text = buttonText,
+                        onClick = onButtonClick
+                    )
+                }
+            }
+
+            // Show purchase confirmation dialog
+            if (showPurchaseDialog) {
+                PurchaseConfirmationDialog(
+                    onDismiss = { showPurchaseDialog = false },
+                    onContinue = {
+                        val intent = Intent(Intent.ACTION_VIEW, course.purchaseLink?.toUri())
+                        context.startActivity(intent)
+                        showPurchaseDialog = false
+                    }
                 )
             }
             Text(
@@ -956,6 +1018,111 @@ private fun CourseDescription(
             applyDarkModeIfEnabled(isDarkTheme)
         }
     })
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun PurchaseConfirmationDialog(
+    onDismiss: () -> Unit,
+    onContinue: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        content = {
+            Column(
+                Modifier
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.appColors.background,
+                        MaterialTheme.appShapes.cardShape
+                    )
+                    .clip(MaterialTheme.appShapes.cardShape)
+                    .border(
+                        1.dp,
+                        MaterialTheme.appColors.cardViewBorder,
+                        MaterialTheme.appShapes.cardShape
+                    )
+                    .padding(horizontal = 40.dp, vertical = 36.dp)
+                    .semantics { testTagsAsResourceId = true },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Close button at top right
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    IconButton(
+                        modifier = Modifier
+                            .testTag("ib_close_purchase_dialog")
+                            .size(24.dp),
+                        onClick = onDismiss
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(id = CoreR.string.core_cancel),
+                            tint = MaterialTheme.appColors.primary
+                        )
+                    }
+                }
+
+                // Shopping cart icon
+                Icon(
+                    modifier = Modifier
+                        .width(88.dp)
+                        .height(85.dp),
+                    imageVector = Icons.Filled.ShoppingCart,
+                    contentDescription = null,
+                    tint = MaterialTheme.appColors.onBackground
+                )
+
+                Spacer(Modifier.size(36.dp))
+
+                // Title
+                Text(
+                    modifier = Modifier.testTag("txt_purchase_dialog_title"),
+                    text = stringResource(id = R.string.discovery_purchase_confirmation_title),
+                    color = MaterialTheme.appColors.textPrimary,
+                    style = MaterialTheme.appTypography.titleLarge,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.size(16.dp))
+
+                // Message
+                Text(
+                    modifier = Modifier.testTag("txt_purchase_dialog_message"),
+                    text = stringResource(id = R.string.discovery_purchase_confirmation_message),
+                    color = MaterialTheme.appColors.textPrimary,
+                    style = MaterialTheme.appTypography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.size(36.dp))
+
+                // Continue button with primary color
+                OpenEdXButton(
+                    modifier = Modifier
+                        .testTag("btn_continue_purchase")
+                        .fillMaxWidth(),
+                    text = stringResource(id = R.string.discovery_continue),
+                    onClick = onContinue,
+                    backgroundColor = MaterialTheme.appColors.primary,
+                    content = {
+                        Text(
+                            modifier = Modifier
+                                .testTag("txt_continue_purchase")
+                                .fillMaxWidth(),
+                            text = stringResource(id = R.string.discovery_continue),
+                            color = MaterialTheme.appColors.primaryButtonText,
+                            style = MaterialTheme.appTypography.labelLarge,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                )
+            }
+        }
+    )
 }
 
 @Preview(uiMode = UI_MODE_NIGHT_NO)

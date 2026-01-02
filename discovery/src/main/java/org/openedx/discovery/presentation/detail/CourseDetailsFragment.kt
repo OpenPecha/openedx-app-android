@@ -139,6 +139,13 @@ class CourseDetailsFragment : Fragment() {
     }
     private val router by inject<DiscoveryRouter>()
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh course details when returning from browser purchase
+        // This ensures enrollment status is updated if user completed purchase
+        viewModel.getCourseDetail()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,

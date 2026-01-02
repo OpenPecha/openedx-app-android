@@ -64,6 +64,8 @@ data class CourseEntity(
     val learningOutcomes: String,
     @ColumnInfo("instructors")
     val instructors: String,
+    @ColumnInfo("purchaseLink")
+    val purchaseLink: String?,
 ) {
 
     fun mapToDomain(): Course {
@@ -93,7 +95,8 @@ data class CourseEntity(
             courseRequirement = courseRequirement,
             description = description,
             learningOutcomes = learningOutcomes,
-            instructorsList = emptyList()
+            instructorsList = emptyList(),
+            purchaseLink = purchaseLink
         )
     }
 
@@ -126,6 +129,7 @@ data class CourseEntity(
                 description = model.description.orEmpty(),
                 learningOutcomes = model.learningOutcomes?.joinToString(", ") ?: "",
                 instructors = model.instructors?.mapNotNull { it.name }?.joinToString(", ") ?: "",
+                purchaseLink = model.purchaseLink
             )
         }
     }

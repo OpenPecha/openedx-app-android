@@ -29,5 +29,6 @@ data class Course(
     val courseRequirement: String,
     val description: String,
     val learningOutcomes: String,
-    val instructorsList: List<org.openedx.discovery.data.model.Instructor> = emptyList()
+    val instructorsList: List<org.openedx.discovery.data.model.Instructor> = emptyList(),
+    val purchaseLink: String? = null
 )

@@ -40,6 +40,19 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 }
 
 /**
+ * Migration from version 7 to version 8
+ *
+ * Changes:
+ * - Adds new field to course_discovery_table:
+ *   - purchaseLink: URL to purchase paid courses
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE course_discovery_table ADD COLUMN purchaseLink TEXT DEFAULT NULL")
+    }
+}
+
+/**
  * All migrations in chronological order.
  * This array is used by the database builder to apply migrations automatically.
  *
@@ -48,7 +61,8 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
  * - Add it to this array: arrayOf(MIGRATION_6_7, MIGRATION_7_8, ...)
  */
 val ALL_MIGRATIONS = arrayOf(
-    MIGRATION_6_7
+    MIGRATION_6_7,
+    MIGRATION_7_8
     // Add future migrations here
 )
 

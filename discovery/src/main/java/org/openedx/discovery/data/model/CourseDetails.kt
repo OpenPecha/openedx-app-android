@@ -58,6 +58,8 @@ data class CourseDetails(
     val learningOutcomes: List<String>?,
     @SerializedName("instructors")
     val instructors: List<Instructor>?,
+    @SerializedName("purchase_link")
+    val purchaseLink: String?,
 ) {
 
     fun mapToDomain(): Course {
@@ -87,7 +89,8 @@ data class CourseDetails(
             courseRequirement = courseRequirement.orEmpty(),
             description = description.orEmpty(),
             learningOutcomes = learningOutcomes?.joinToString(", ") ?: "",
-            instructorsList = instructors ?: emptyList()
+            instructorsList = instructors ?: emptyList(),
+            purchaseLink = purchaseLink
         )
     }
 

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import org.openedx.core.extension.injectHeaderFooterHidingCss
 import org.openedx.core.ui.theme.appColors
 import org.openedx.core.ui.theme.getDarkThemeFromPreferences
 import org.openedx.core.utils.EmailUtil
@@ -53,6 +54,7 @@ fun WebContentScreen(
     onBackClick: () -> Unit,
     htmlBody: String? = null,
     contentUrl: String? = null,
+    hideHeaderFooter: Boolean = true,
 ) {
     Scaffold(
         modifier = Modifier
@@ -110,6 +112,7 @@ fun WebContentScreen(
                                 apiHostUrl = apiHostUrl,
                                 body = htmlBody,
                                 contentUrl = contentUrl,
+                                hideHeaderFooter = hideHeaderFooter,
                                 onWebPageLoaded = {
                                     webViewAlpha = 1f
                                 }
@@ -128,6 +131,7 @@ private fun WebViewContent(
     apiHostUrl: String? = null,
     body: String? = null,
     contentUrl: String? = null,
+    hideHeaderFooter: Boolean = true,
     onWebPageLoaded: () -> Unit
 ) {
     val context = LocalContext.current
@@ -164,11 +168,12 @@ private fun WebViewContent(
 
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
-                        val css = when {
-                            url?.contains("privacy", ignoreCase = true) == true -> PRIVACY_PAGE_CSS
-                            else -> return
+                        if (hideHeaderFooter) {
+                            if (url?.contains("privacy", ignoreCase = true) == true) {
+                                injectCss(view, PRIVACY_PAGE_ADDITIONAL_CSS)
+                            }
+                            view?.injectHeaderFooterHidingCss()
                         }
-                        injectCss(view, css)
                     }
                 }
                 with(settings) {
@@ -213,14 +218,7 @@ private fun WebViewContent(
     )
 }
 
-private const val PRIVACY_PAGE_CSS = """
-    header, footer {
-        display: none !important;
-    }
-    body {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
+private const val PRIVACY_PAGE_ADDITIONAL_CSS = """
     .content-wrapper {
         padding: 0 !important;
         margin: 0;

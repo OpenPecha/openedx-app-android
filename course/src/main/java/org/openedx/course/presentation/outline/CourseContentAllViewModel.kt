@@ -329,6 +329,15 @@ class CourseContentAllViewModel(
         )
     }
 
+    fun navigateToCertificate(fm: FragmentManager, url: String) {
+        viewCertificateTappedEvent()
+        courseRouter.navigateToCertificate(
+            fm = fm,
+            title = resourceManager.getString(org.openedx.core.R.string.core_certificate),
+            url = url
+        )
+    }
+
     private fun resumeCourseTappedEvent(blockId: String) {
         val currentState = uiState.value
         if (currentState is CourseContentAllUIState.CourseData) {

@@ -25,8 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.AndroidUriHandler
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -68,8 +66,6 @@ fun CourseContentAllScreen(
     val uiState by viewModel.uiState.collectAsState()
     val uiMessage by viewModel.uiMessage.collectAsState(null)
     val resumeBlockId by viewModel.resumeBlockId.collectAsState("")
-    val context = LocalContext.current
-
     LaunchedEffect(resumeBlockId) {
         if (resumeBlockId.isNotEmpty()) {
             viewModel.openBlock(fragmentManager, resumeBlockId)
@@ -128,10 +124,8 @@ fun CourseContentAllScreen(
                 fragmentManager = fragmentManager,
             )
         },
-        onCertificateClick = {
-            viewModel.viewCertificateTappedEvent()
-            it.takeIfNotEmpty()
-                ?.let { url -> AndroidUriHandler(context).openUri(url) }
+        onCertificateClick = { url ->
+            viewModel.navigateToCertificate(fragmentManager, url)
         }
     )
 }

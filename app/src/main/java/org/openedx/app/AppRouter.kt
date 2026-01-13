@@ -325,6 +325,13 @@ class AppRouter :
             HandoutsWebViewFragment.newInstance(type.name, courseId)
         )
     }
+
+    override fun navigateToCertificate(fm: FragmentManager, title: String, url: String) {
+        replaceFragmentWithBackStack(
+            fm,
+            WebContentFragment.newInstance(title = title, url = url)
+        )
+    }
     // endregion
 
     // region DiscussionRouter

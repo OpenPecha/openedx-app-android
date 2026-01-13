@@ -66,4 +66,6 @@ interface CourseRouter {
     fun navigateToVideoQuality(fm: FragmentManager, videoQualityType: VideoQualityType)
 
     fun navigateToDiscover(fm: FragmentManager)
+
+    fun navigateToCertificate(fm: FragmentManager, title: String, url: String)
 }

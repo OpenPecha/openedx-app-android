@@ -33,8 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.AndroidUriHandler
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -87,7 +85,6 @@ fun CourseOutlineScreen(
     val uiState by viewModel.uiState.collectAsState()
     val uiMessage by viewModel.uiMessage.collectAsState(null)
     val resumeBlockId by viewModel.resumeBlockId.collectAsState("")
-    val context = LocalContext.current
 
     LaunchedEffect(resumeBlockId) {
         if (resumeBlockId.isNotEmpty()) {
@@ -156,7 +153,7 @@ fun CourseOutlineScreen(
         onCertificateClick = {
             viewModel.viewCertificateTappedEvent()
             it.takeIfNotEmpty()
-                ?.let { url -> AndroidUriHandler(context).openUri(url) }
+                ?.let { url -> viewModel.navigateToCertificate(fragmentManager, url) }
         }
     )
 }

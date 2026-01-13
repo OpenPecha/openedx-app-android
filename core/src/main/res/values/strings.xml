@@ -200,4 +200,7 @@
 
     <!-- Language Options -->
     <string name="core_language">Language</string>
+
+    <!-- Certificate -->
+    <string name="core_certificate">Certificate</string>
 </resources>

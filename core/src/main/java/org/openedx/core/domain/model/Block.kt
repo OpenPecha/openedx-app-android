@@ -131,6 +131,7 @@ data class Block(
     val isWordCloudBlock get() = type == BlockType.WORD_CLOUD
     val isLTIConsumerBlock get() = type == BlockType.LTI_CONSUMER
     val isSurveyBlock get() = type == BlockType.SURVEY
+    val isLibraryContentBlock get() = type == BlockType.LIBRARY_CONTENT
 }
 
 @Parcelize

@@ -107,7 +107,8 @@ class CourseUnitContainerAdapter(
                 block.isDragAndDropBlock ||
                 block.isWordCloudBlock ||
                 block.isLTIConsumerBlock ||
-                block.isSurveyBlock
+                block.isSurveyBlock ||
+                block.isLibraryContentBlock
     }
 
     private fun isBlockGatedWithPrerequisite(block: Block): Boolean {

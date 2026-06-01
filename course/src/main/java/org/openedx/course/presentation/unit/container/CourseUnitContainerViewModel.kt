@@ -276,10 +276,25 @@ class CourseUnitContainerViewModel(
                 }
 
                 if (block.descendants.isNotEmpty() || block.isGated()) {
-                    _descendantsBlocks.value =
-                        block.descendants.mapNotNull { descendant ->
-                            blocks.firstOrNull { descendant == it.id }
-                        }
+                    val rawDescendants = block.descendants.mapNotNull { descendant ->
+                        blocks.firstOrNull { descendant == it.id }
+                    }
+
+                    // The OpenEdX API flattens library_content's children into the parent
+                    // vertical's descendants list but returns the library_content block itself
+                    // with an empty descendants field. Since the library_content WebView
+                    // already renders all its problems, remove the duplicate problem pages.
+                    val hasLibraryContent = rawDescendants.any { it.isLibraryContentBlock }
+                    _descendantsBlocks.value = if (hasLibraryContent) {
+                        // Show each library problem as its own page; drop the wrapper block
+                        // whose WebView would show all questions on a single page.
+                        rawDescendants.filter { !it.isLibraryContentBlock }
+                    } else {
+                        // Generic case: filter blocks that are declared children of another
+                        // block in the same list (handles other nested xBlock containers).
+                        val childIdsOfDescendants = rawDescendants.flatMap { it.descendants }.toSet()
+                        rawDescendants.filter { it.id !in childIdsOfDescendants }
+                    }
                     _subSectionUnitBlocks.value =
                         getSubSectionUnitBlocks(blocks, getSubSectionId(unitId))
 
@@ -295,7 +310,7 @@ class CourseUnitContainerViewModel(
                     setNextVerticalIndex()
                 }
                 if (currentVerticalIndex != -1) {
-                    _verticalBlockCounts.value = blocks[currentVerticalIndex].descendants.size
+                    _verticalBlockCounts.value = _descendantsBlocks.value.size
                 }
                 if (componentId.isNotEmpty()) {
                     currentIndex = _descendantsBlocks.value.indexOfFirst { it.id == componentId }

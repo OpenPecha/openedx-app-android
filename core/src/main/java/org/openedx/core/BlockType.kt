@@ -16,6 +16,9 @@ enum class BlockType {
     HTML {
         override fun isContainer() = false
     },
+    LIBRARY_CONTENT {
+        override fun isContainer() = false
+    },
     LTI_CONSUMER {
         override fun isContainer() = false
     },
